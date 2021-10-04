@@ -1,5 +1,5 @@
 import set from "lodash-es/set"
-import { useRef, useState, useEffect } from "react"
+import { useRef, useState, useEffect, useReducer } from "react"
 import tmi from "tmi.js"
 
 type BigStore = {
@@ -16,61 +16,80 @@ type BigStore = {
 type SmallStore = {
   //
   name: string
+  connected: boolean
 }
 
 const initialBigStore: BigStore = {
-  followedChannels: ["retrogradetom"],
+  followedChannels: ["retrogradetom", "veryDave"],
   joinedChannels: [],
   channels: {},
 }
 
 const initialSmallStore: SmallStore = {
   name: "kaurtube",
+  connected: false,
 }
 
 const Main = () => {
   const client = useRef(
     new tmi.client({
-      options: { debug: false },
+      // @ts-ignore
+      options: { debug: false, skipMembership: true },
       // channels: [...props.channels],
     })
   )
   // let messages: string[] = []
   // const [name, setName] = useState("")
   // const [client, setClient] = useState(undefined)
-  const [messages, setMessages] = useState(new Array<string>())
+  // const [messages, setMessages] = useState(new Array<string>())
   const [bigStore, setBigStore] = useState(initialBigStore)
   const [smallStore, setSmallStore] = useState(initialSmallStore)
-
+  const [ignored, forceUpdate] = useReducer(x => x + 1, 0);
   // const messagesRefHook = useRef(messages)
 
+  // componentDidMount()
   useEffect(() => {
     async function main() {
+      // await client.current.disconnect()
       await client.current.connect()
 
-      console.log("Connected!")
+      let newSmallStore = smallStore
+      smallStore.connected = true
+      setSmallStore(() => newSmallStore)
 
       // setSmallStore({ name: "kaurtube" })
-
       client.current?.removeAllListeners()
 
       client.current?.addListener("message", (channel: string, tags, message: string, self) => {
-        // console.log(message)
-        channel = channel.replace("#", "")
-        message = `[${channel}] {${tags["display-name"]}}: ${message}`
+        channel = channel.replace("#", "").toLowerCase()
+        console.log(`[${channel}] {${tags["display-name"]}}: ${message}`)
+        console.log(bigStore.joinedChannels.includes(channel))
+        if (bigStore.joinedChannels.includes(channel)) {
+          // console.log(message)
+          // channel = channel.replace("#", "").toLowerCase()
+          message = `[${channel}] {${tags["display-name"]}}: ${message}`
 
-        console.log(message)
+          console.log(message)
+          let newBigStore = bigStore
+          if (newBigStore.channels[channel]?.messages) {
+            newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
+          } else {
+            set(newBigStore.channels, [channel, "messages"], [])
+            newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
+          }
 
-        if (bigStore.channels[channel]?.messages) {
-          bigStore.channels[channel].messages.push(message)
-        } else {
-          set(bigStore.channels, [channel, "messages"], [])
-          bigStore.channels[channel].messages.push(message)
+          // let newMessages = messages
+          // newMessages.push(message)
+          // setMessages(() => newMessages)
+          console.log(newBigStore)
+          // setMessages(() => [...messages, message])
+          setBigStore(() => newBigStore)
+
+          forceUpdate()
         }
-
-        setMessages((messages) => [...messages, message])
       })
 
+      forceUpdate()
     }
 
     main()
@@ -94,30 +113,25 @@ const Main = () => {
     //   //   console.log(messagesRefHook.current)
     //   // }
     // })
-
-
-
     // client.current?.once("message", (channel: string, tags, message: string, self) => {
     //   // console.log(message)
     //   channel = channel.replace("#", "")
     //   message = `[${channel}] {${tags["display-name"]}}: ${message}`
-
     //   console.log(message)
-
     //   if (bigStore.channels[channel]?.messages) {
     //     bigStore.channels[channel].messages.push(message)
     //   } else {
     //     set(bigStore.channels, [channel, "messages"], [])
     //     bigStore.channels[channel].messages.push(message)
     //   }
-
     //   setMessages((messages) => [...messages, message])
     // })
-
-  }, [messages])
+  }, [])
 
   const join = async (channel: string) => {
     try {
+      channel = channel.replace("#", "").toLowerCase()
+      console.log(channel)
       if (bigStore.joinedChannels.includes(channel)) {
         return
       }
@@ -133,11 +147,14 @@ const Main = () => {
       }
 
       newBigStore.joinedChannels = newBigStore.joinedChannels.map((chan) => {
-        chan = chan.replace("#", "")
+        chan = chan.replace("#", "").toLowerCase()
         return chan
-      })
+      }).sort()
+
       console.log(newBigStore)
-      setBigStore(newBigStore)
+      setBigStore(() => newBigStore)
+
+      forceUpdate()
     } catch (error) {
       console.error(error)
     }
@@ -152,16 +169,18 @@ const Main = () => {
 
       newBigStore.joinedChannels = client?.current.getChannels() ? client?.current.getChannels() : []
 
-      newBigStore.joinedChannels = newBigStore.joinedChannels.map((channel) => {
-        channel.replace("#", "")
-        return channel
-      })
+      newBigStore.joinedChannels = newBigStore.joinedChannels.map((chan) => {
+        chan = chan.replace("#", "").toLowerCase()
+        return chan
+      }).sort()
 
-      setMessages([])
+      // setMessages([])
 
-      setBigStore(newBigStore)
+      setBigStore(() => newBigStore)
 
       console.log(newBigStore)
+
+      forceUpdate()
     } catch (error) {
       console.error(error)
     }
@@ -169,18 +188,7 @@ const Main = () => {
 
   return (
     <div>
-      {/* <div>
-        <label>
-          First Name:
-          <input className="ml-4" type="text" value={smallStore.name} onChange={(e) => setSmallStore({ name: e.target.value as string })} />
-        </label>
-        <button className="ml-4" onClick={() => join(smallStore.name)} value="Join">
-          Join
-        </button>
-        <button className="ml-4" onClick={() => part(smallStore.name)} value="Leave">
-          Leave
-        </button>
-      </div> */}
+      <div className="mt-4">Connected {smallStore.connected ? "Yes" : "No"}</div>
 
       <div className="mt-4">
         {bigStore.followedChannels.map((channel: string, i: number) => {
@@ -208,9 +216,17 @@ const Main = () => {
         })}
       </div>
 
-      <div className="mt-4">
+      {/* <div className="mt-4">
         {messages.map((message: string, i: number) => {
           return <div key={i}>{message}</div>
+        })}
+      </div> */}
+
+      <div className="mt-4">
+        {Object.keys(bigStore.channels).map((channel) => {
+          return bigStore.channels[channel]?.messages.map((message, i) => {
+            return <div key={i}>{message}</div>
+          })
         })}
       </div>
     </div>
