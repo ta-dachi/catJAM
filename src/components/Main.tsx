@@ -189,7 +189,7 @@ const Main = () => {
   }
 
   return (
-    <div>
+    <section>
       <div className="mt-4">Connected {smallStore.connected ? "Yes" : "No"}</div>
 
       <div className="mt-4">
@@ -225,39 +225,68 @@ const Main = () => {
         })}
       </div> */}
 
-      <div>
+      {/* View chosen */}
+
+      {/* View Multiple */}
+      {/* <div>
         {Object.keys(bigStore.channels).map((channel) => {
           return (
             <Virtuoso
+              key={channel}
               style={{ height: "200px" }}
               totalCount={bigStore.channels[channel]?.messages.length}
               itemContent={(index) => {
-                return bigStore.channels[channel]?.messages.map((message, i) => {
-                  if (bigStore.joinedChannels.includes(channel)) {
-                    return <div key={i}>{message}</div>
-                  }
-                })
+                return (
+                  <div key={index}>
+                    {index} {bigStore.channels[channel].messages[index]}
+                  </div>
+                )
+                // return bigStore.channels[channel]?.messages.map((message, i) => {
+                //   if (bigStore.joinedChannels.includes(channel)) {
+
+                //   }
+                // })
               }}
             />
           )
         })}
+      </div> */}
+
+      <div>
+        {Object.keys(bigStore.channels).map((channel) => {
+          return (
+            <ChatWindow key={channel} channel={channel} messages={bigStore.channels[channel].messages}/>
+          )
+        })}
       </div>
-
-      {/* <Virtuoso style={{ height: '400px' }} totalCount={200} itemContent={
-        (index) => {
-
-          
-          return (Object.keys(bigStore.channels).map((channel) => {
-            return bigStore.channels[channel]?.messages.map((message, i) => {
-              if (bigStore.joinedChannels.includes(channel)) {
-                return <div key={i}>{message}</div>
-              }
-            })
-          }))
-        }
-      } /> */}
-    </div>
+    </section>
   )
 }
 
 export default Main
+
+type ChatWindowProps = {
+  channel: string
+  messages: string[]
+}
+
+const ChatWindow = (props: ChatWindowProps) => {
+  const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
+
+  return (
+    <section>
+      <Virtuoso
+        key={props.channel}
+        style={{ height: "200px" }}
+        totalCount={props.messages.length}
+        itemContent={(index) => {
+          return (
+            <div key={index}>
+              {index} {props.messages[index]}
+            </div>
+          )
+        }}
+      />
+    </section>
+  )
+}
