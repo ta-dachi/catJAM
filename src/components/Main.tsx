@@ -225,7 +225,9 @@ const Main = () => {
       <div className="mt-4">
         {Object.keys(bigStore.channels).map((channel) => {
           return bigStore.channels[channel]?.messages.map((message, i) => {
-            return <div key={i}>{message}</div>
+            if (bigStore.joinedChannels.includes(channel)) {
+              return <div key={i}>{message}</div>
+            }
           })
         })}
       </div>

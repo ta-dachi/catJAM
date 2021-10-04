@@ -1,27 +1,31 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
-import Main from '../components/Main';
-import './Home.css';
+import { IonContent, IonHeader, IonImg, IonPage, IonTitle, IonToolbar } from "@ionic/react"
+import Main from "../components/Main"
+import "./Home.css"
+import catJAM_gif from "../assets/catJAM.gif"
 
 const Home: React.FC = () => {
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Blank</IonTitle>
+          <IonTitle className="flex-row h-20 p-0">
+
+            <IonImg className="h-20 w-20" src={catJAM_gif} />
+          </IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Blank</IonTitle>
+          <IonTitle className="h-20">
+            <IonImg className="h-20" src={catJAM_gif} />
+          </IonTitle>
           </IonToolbar>
         </IonHeader>
-        {/* <ExploreContainer /> */}
         <Main />
       </IonContent>
     </IonPage>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
