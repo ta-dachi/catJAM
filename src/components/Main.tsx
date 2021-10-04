@@ -1,6 +1,7 @@
 import set from "lodash-es/set"
 import { useRef, useState, useEffect, useReducer } from "react"
 import tmi from "tmi.js"
+import { Virtuoso } from "react-virtuoso"
 
 type BigStore = {
   //
@@ -20,7 +21,7 @@ type SmallStore = {
 }
 
 const initialBigStore: BigStore = {
-  followedChannels: ["retrogradetom", "veryDave"],
+  followedChannels: ["goati_", "werster"],
   joinedChannels: [],
   channels: {},
 }
@@ -44,7 +45,7 @@ const Main = () => {
   // const [messages, setMessages] = useState(new Array<string>())
   const [bigStore, setBigStore] = useState(initialBigStore)
   const [smallStore, setSmallStore] = useState(initialSmallStore)
-  const [ignored, forceUpdate] = useReducer(x => x + 1, 0);
+  const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
   // const messagesRefHook = useRef(messages)
 
   // componentDidMount()
@@ -62,8 +63,7 @@ const Main = () => {
 
       client.current?.addListener("message", (channel: string, tags, message: string, self) => {
         channel = channel.replace("#", "").toLowerCase()
-        console.log(`[${channel}] {${tags["display-name"]}}: ${message}`)
-        console.log(bigStore.joinedChannels.includes(channel))
+
         if (bigStore.joinedChannels.includes(channel)) {
           // console.log(message)
           // channel = channel.replace("#", "").toLowerCase()
@@ -146,10 +146,12 @@ const Main = () => {
         set(newBigStore.channels, [channel, "messages"], [])
       }
 
-      newBigStore.joinedChannels = newBigStore.joinedChannels.map((chan) => {
-        chan = chan.replace("#", "").toLowerCase()
-        return chan
-      }).sort()
+      newBigStore.joinedChannels = newBigStore.joinedChannels
+        .map((chan) => {
+          chan = chan.replace("#", "").toLowerCase()
+          return chan
+        })
+        .sort()
 
       console.log(newBigStore)
       setBigStore(() => newBigStore)
@@ -169,12 +171,12 @@ const Main = () => {
 
       newBigStore.joinedChannels = client?.current.getChannels() ? client?.current.getChannels() : []
 
-      newBigStore.joinedChannels = newBigStore.joinedChannels.map((chan) => {
-        chan = chan.replace("#", "").toLowerCase()
-        return chan
-      }).sort()
-
-      // setMessages([])
+      newBigStore.joinedChannels = newBigStore.joinedChannels
+        .map((chan) => {
+          chan = chan.replace("#", "").toLowerCase()
+          return chan
+        })
+        .sort()
 
       setBigStore(() => newBigStore)
 
@@ -192,37 +194,28 @@ const Main = () => {
 
       <div className="mt-4">
         {bigStore.followedChannels.map((channel: string, i: number) => {
-          return (
+          const html = !bigStore.joinedChannels.includes(channel) ? (
             <div key={i}>
               {channel}
               <button className="ml-4" onClick={() => join(channel)}>
                 Join
               </button>
             </div>
+          ) : (
+            bigStore.joinedChannels.includes(channel) && (
+              <div key={i}>
+                {channel}
+                <button className="ml-4" onClick={() => part(channel)}>
+                  Leave
+                </button>
+              </div>
+            )
           )
-        })}
-      </div>
-
-      <div className="mt-4">
-        {bigStore.joinedChannels.map((channel: string, i: number) => {
-          return (
-            <div key={i}>
-              {channel}
-              <button className="ml-4" onClick={() => part(channel)}>
-                Leave
-              </button>
-            </div>
-          )
+          return html
         })}
       </div>
 
       {/* <div className="mt-4">
-        {messages.map((message: string, i: number) => {
-          return <div key={i}>{message}</div>
-        })}
-      </div> */}
-
-      <div className="mt-4">
         {Object.keys(bigStore.channels).map((channel) => {
           return bigStore.channels[channel]?.messages.map((message, i) => {
             if (bigStore.joinedChannels.includes(channel)) {
@@ -230,7 +223,39 @@ const Main = () => {
             }
           })
         })}
+      </div> */}
+
+      <div>
+        {Object.keys(bigStore.channels).map((channel) => {
+          return (
+            <Virtuoso
+              style={{ height: "200px" }}
+              totalCount={bigStore.channels[channel]?.messages.length}
+              itemContent={(index) => {
+                return bigStore.channels[channel]?.messages.map((message, i) => {
+                  if (bigStore.joinedChannels.includes(channel)) {
+                    return <div key={i}>{message}</div>
+                  }
+                })
+              }}
+            />
+          )
+        })}
       </div>
+
+      {/* <Virtuoso style={{ height: '400px' }} totalCount={200} itemContent={
+        (index) => {
+
+          
+          return (Object.keys(bigStore.channels).map((channel) => {
+            return bigStore.channels[channel]?.messages.map((message, i) => {
+              if (bigStore.joinedChannels.includes(channel)) {
+                return <div key={i}>{message}</div>
+              }
+            })
+          }))
+        }
+      } /> */}
     </div>
   )
 }

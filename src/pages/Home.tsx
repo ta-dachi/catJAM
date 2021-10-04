@@ -22,7 +22,9 @@ const Home: React.FC = () => {
           </IonTitle>
           </IonToolbar>
         </IonHeader>
+
         <Main />
+
       </IonContent>
     </IonPage>
   )
