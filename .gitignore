@@ -20,7 +20,10 @@
 .vscode
 .idea
 
+
 *.swp
+ENV
+.env*
 
 npm-debug.log*
 yarn-debug.log*

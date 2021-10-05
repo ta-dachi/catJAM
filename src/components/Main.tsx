@@ -2,6 +2,7 @@ import set from "lodash-es/set"
 import { useRef, useState, useEffect, useReducer } from "react"
 import tmi from "tmi.js"
 import { Virtuoso } from "react-virtuoso"
+import { ClientCredentialsAuthProvider } from '@twurple/auth';
 
 type BigStore = {
   //
@@ -12,6 +13,9 @@ type BigStore = {
       messages: string[]
     }
   }
+  //
+  token: {}
+
 }
 
 type SmallStore = {
@@ -21,15 +25,33 @@ type SmallStore = {
 }
 
 const initialBigStore: BigStore = {
-  followedChannels: ["goati_", "annk_"],
+  //
+  followedChannels: ["esl_sc2", "epicnamebro"],
   joinedChannels: [],
   channels: {},
+  //
+  token: {}
 }
 
 const initialSmallStore: SmallStore = {
   name: "kaurtube",
   connected: false,
 }
+
+const clientId: string = process.env.REACT_APP_CLIENT_ID as string;
+const clientSecret: string = process.env.REACT_APP_SECRET as string;
+console.log(clientId)
+const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret);
+
+// const clientId = 'YOUR_CLIENT_ID';
+// const clientSecret = 'YOUR_CLIENT_SECRET';
+// const authProvider = new RefreshingAuthProvider(
+// 	{
+// 		clientId,
+// 		clientSecret,
+// 		onRefresh: async newTokenData => await fs.writeFile('./tokens.json', JSON.stringify(newTokenData, null, 4), 'UTF-8')
+// 	},
+// );
 
 const Main = () => {
   const client = useRef(
@@ -53,6 +75,8 @@ const Main = () => {
     async function main() {
       // await client.current.disconnect()
       await client.current.connect()
+
+      console.log('Connected!')
 
       let newSmallStore = smallStore
       smallStore.connected = true
@@ -89,6 +113,9 @@ const Main = () => {
         }
       })
 
+      
+      console.log(await authProvider.getAccessToken())
+      console.log('test')
       forceUpdate()
     }
 
