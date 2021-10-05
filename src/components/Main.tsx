@@ -21,7 +21,7 @@ type SmallStore = {
 }
 
 const initialBigStore: BigStore = {
-  followedChannels: ["goati_", "werster"],
+  followedChannels: ["goati_", "annk_"],
   joinedChannels: [],
   channels: {},
 }
@@ -252,11 +252,12 @@ const Main = () => {
         })}
       </div> */}
 
+      {/* {Object.keys(bigStore.joinedChannels).map((channel) => {
+        return bigStore.channels[channel]?.messages ? <div>"true"</div> : <div>false</div>
+      })} */}
       <div>
-        {Object.keys(bigStore.channels).map((channel) => {
-          return (
-            <ChatWindow key={channel} channel={channel} messages={bigStore.channels[channel].messages}/>
-          )
+        {bigStore.joinedChannels.map((channel: string) => {
+          return <ChatWindow key={channel} channel={channel} messages={bigStore.channels[channel]?.messages ? bigStore.channels[channel]?.messages : []} />
         })}
       </div>
     </section>
@@ -275,14 +276,15 @@ const ChatWindow = (props: ChatWindowProps) => {
 
   return (
     <section>
+      {props.channel}
       <Virtuoso
         key={props.channel}
         style={{ height: "200px" }}
-        totalCount={props.messages.length}
+        totalCount={props.messages?.length ? props.messages?.length : 0}
         itemContent={(index) => {
           return (
             <div key={index}>
-              {index} {props.messages[index]}
+              {index} {props.messages[index] && props.messages[index]}
             </div>
           )
         }}
