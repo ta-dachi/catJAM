@@ -2,8 +2,46 @@ import set from "lodash-es/set"
 import { useRef, useState, useEffect, useReducer } from "react"
 import tmi from "tmi.js"
 import { Virtuoso } from "react-virtuoso"
-import { ClientCredentialsAuthProvider } from '@twurple/auth';
+import { ClientCredentialsAuthProvider } from "@twurple/auth"
+import axios from "axios"
 
+//
+const clientId: string = process.env.REACT_APP_CLIENT_ID as string
+const clientSecret: string = process.env.REACT_APP_SECRET as string
+const redirectUri: string = "https://192.168.1.14:3000/home"
+const scope: string = "chat%3Aread+user_read"
+//
+const OAUTH_URL: string = "https://id.twitch.tv/oauth2/" // Change this if twitch's API changes
+const OAUTH_REVOKE: string = "revoke"
+const OAUTH_AUTHORIZE: string = "authorize"
+const OAUTH_VALIDATE: string = "validate"
+//
+const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret)
+
+function generateNonce(stringLength: any) {
+  var randomString = "" // Empty value of the selective variable
+  const allCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" // listing of all alpha-numeric letters
+  while (stringLength--) {
+    randomString += allCharacters.substr(Math.floor(Math.random() * allCharacters.length + 1), 1) // selecting any value from allCharacters varible by using Math.random()
+  }
+  return randomString // returns the generated alpha-numeric string
+}
+
+/**
+ * Generate a Twitch login URL to get a access token.
+ *
+ * @param nonce
+ */
+function generateAccessTokenURL(nonce?: string) {
+  return `${OAUTH_URL}${OAUTH_AUTHORIZE}
+?client_id=${clientId}
+&redirect_uri=${redirectUri}
+&response_type=token
+&scope=${scope}
+&nonce=${nonce}`
+}
+
+//
 type BigStore = {
   //
   followedChannels: string[]
@@ -15,7 +53,6 @@ type BigStore = {
   }
   //
   token: {}
-
 }
 
 type SmallStore = {
@@ -30,28 +67,13 @@ const initialBigStore: BigStore = {
   joinedChannels: [],
   channels: {},
   //
-  token: {}
+  token: {},
 }
 
 const initialSmallStore: SmallStore = {
   name: "kaurtube",
   connected: false,
 }
-
-const clientId: string = process.env.REACT_APP_CLIENT_ID as string;
-const clientSecret: string = process.env.REACT_APP_SECRET as string;
-console.log(clientId)
-const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret);
-
-// const clientId = 'YOUR_CLIENT_ID';
-// const clientSecret = 'YOUR_CLIENT_SECRET';
-// const authProvider = new RefreshingAuthProvider(
-// 	{
-// 		clientId,
-// 		clientSecret,
-// 		onRefresh: async newTokenData => await fs.writeFile('./tokens.json', JSON.stringify(newTokenData, null, 4), 'UTF-8')
-// 	},
-// );
 
 const Main = () => {
   const client = useRef(
@@ -76,7 +98,7 @@ const Main = () => {
       // await client.current.disconnect()
       await client.current.connect()
 
-      console.log('Connected!')
+      console.log("Connected!")
 
       let newSmallStore = smallStore
       smallStore.connected = true
@@ -113,9 +135,7 @@ const Main = () => {
         }
       })
 
-      
-      console.log(await authProvider.getAccessToken())
-      console.log('test')
+      // console.log(response)
       forceUpdate()
     }
 
@@ -217,8 +237,10 @@ const Main = () => {
 
   return (
     <section>
-      <div className="mt-4">Connected {smallStore.connected ? "Yes" : "No"}</div>
-
+      <div className="mt-4">
+        Connected {smallStore.connected ? "Yes" : "No"}
+      </div>
+      <a href={generateAccessTokenURL(generateNonce('Test'))}>Connect to Twitch</a>
       <div className="mt-4">
         {bigStore.followedChannels.map((channel: string, i: number) => {
           const html = !bigStore.joinedChannels.includes(channel) ? (
