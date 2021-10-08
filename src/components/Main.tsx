@@ -2,14 +2,16 @@ import set from "lodash-es/set"
 import { useRef, useState, useEffect, useReducer } from "react"
 import tmi from "tmi.js"
 import { Virtuoso } from "react-virtuoso"
-import { ClientCredentialsAuthProvider } from "@twurple/auth"
+import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
 import axios from "axios"
+import { useLocation } from "react-router"
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
 const clientSecret: string = process.env.REACT_APP_SECRET as string
 const redirectUri: string = "https://192.168.1.14:3000/home"
-const scope: string = "chat%3Aread+user_read"
+const scopeUri: string = "chat%3Aread+user_read"
+const scope: string[] = ["chat:read", "user_read"]
 //
 const OAUTH_URL: string = "https://id.twitch.tv/oauth2/" // Change this if twitch's API changes
 const OAUTH_REVOKE: string = "revoke"
@@ -37,7 +39,7 @@ function generateAccessTokenURL(nonce?: string) {
 ?client_id=${clientId}
 &redirect_uri=${redirectUri}
 &response_type=token
-&scope=${scope}
+&scope=${scopeUri}
 &nonce=${nonce}`
 }
 
@@ -61,6 +63,12 @@ type SmallStore = {
   connected: boolean
 }
 
+type AuthStore = {
+  access_token: string
+  authProvider: StaticAuthProvider | null
+  apiClient: any
+}
+
 const initialBigStore: BigStore = {
   //
   followedChannels: ["esl_sc2", "epicnamebro"],
@@ -75,6 +83,19 @@ const initialSmallStore: SmallStore = {
   connected: false,
 }
 
+const initialAuthStore: AuthStore = {
+  access_token: "",
+  authProvider: null,
+  apiClient: null
+}
+
+function urlHash2Obj(hash: string): any {
+  return hash
+    .split("&")
+    .map((v) => v.split("="))
+    .reduce((pre, [key, value]) => ({ ...pre, [key]: value }), {})
+}
+
 const Main = () => {
   const client = useRef(
     new tmi.client({
@@ -83,96 +104,80 @@ const Main = () => {
       // channels: [...props.channels],
     })
   )
-  // let messages: string[] = []
-  // const [name, setName] = useState("")
-  // const [client, setClient] = useState(undefined)
-  // const [messages, setMessages] = useState(new Array<string>())
+
   const [bigStore, setBigStore] = useState(initialBigStore)
   const [smallStore, setSmallStore] = useState(initialSmallStore)
+  const [authStore, setAuthStore] = useState(initialAuthStore)
+  // forceUpdate
   const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
   // const messagesRefHook = useRef(messages)
+
+  const hash = useLocation().hash.substr(1) // substr(1) removes the # from first element
 
   // componentDidMount()
   useEffect(() => {
     async function main() {
-      // await client.current.disconnect()
-      await client.current.connect()
-
-      console.log("Connected!")
-
-      let newSmallStore = smallStore
-      smallStore.connected = true
-      setSmallStore(() => newSmallStore)
-
-      // setSmallStore({ name: "kaurtube" })
-      client.current?.removeAllListeners()
-
-      client.current?.addListener("message", (channel: string, tags, message: string, self) => {
-        channel = channel.replace("#", "").toLowerCase()
-
-        if (bigStore.joinedChannels.includes(channel)) {
-          // console.log(message)
-          // channel = channel.replace("#", "").toLowerCase()
-          message = `[${channel}] {${tags["display-name"]}}: ${message}`
-
-          console.log(message)
-          let newBigStore = bigStore
-          if (newBigStore.channels[channel]?.messages) {
-            newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
-          } else {
-            set(newBigStore.channels, [channel, "messages"], [])
-            newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
-          }
-
-          // let newMessages = messages
-          // newMessages.push(message)
-          // setMessages(() => newMessages)
-          console.log(newBigStore)
-          // setMessages(() => [...messages, message])
-          setBigStore(() => newBigStore)
-
-          forceUpdate()
+      try {
+        // queryparams
+        if (hash) {
+          const access_token = urlHash2Obj(hash)["access_token"]
+          const authProvider = new StaticAuthProvider(clientId, access_token)
+          const apiClient = new ApiClient({authProvider: authProvider})
+          
+          let newAuthStore = { access_token: access_token, authProvider: authProvider,  }
+          setAuthStore(() => newAuthStore)
         }
-      })
+
+        // twitch connect
+        // await client.current.disconnect()
+        await client.current.connect()
+
+        console.log("Connected!")
+
+        let newSmallStore = smallStore
+        smallStore.connected = true
+        setSmallStore(() => newSmallStore)
+
+        // setSmallStore({ name: "kaurtube" })
+        client.current?.removeAllListeners()
+
+        client.current?.addListener("message", (channel: string, tags, message: string, self) => {
+          channel = channel.replace("#", "").toLowerCase()
+
+          if (bigStore.joinedChannels.includes(channel)) {
+            // console.log(message)
+            // channel = channel.replace("#", "").toLowerCase()
+            message = `[${channel}] {${tags["display-name"]}}: ${message}`
+
+            console.log(message)
+            let newBigStore = bigStore
+            if (newBigStore.channels[channel]?.messages) {
+              newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
+            } else {
+              set(newBigStore.channels, [channel, "messages"], [])
+              newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
+            }
+
+            // let newMessages = messages
+            // newMessages.push(message)
+            // setMessages(() => newMessages)
+            console.log(newBigStore)
+            console.log(authStore)
+            // setMessages(() => [...messages, message])
+            setBigStore(() => newBigStore)
+
+            forceUpdate()
+          }
+        })
+      } catch (error) {
+        console.error(error)
+      }
 
       // console.log(response)
       forceUpdate()
     }
 
     main()
-  }, [])
-
-  useEffect(() => {
-    // client?.current.once("message", (channel: string, tags, message: string, self) => {
-    //   channel = channel.replace("#", "")
-    //   console.log(message)
-    //   // messagesRefHook.current = [...messages, message]
-    //   // console.log(messagesRefHook.current)
-    //   // if (messagesRefHook.current) {
-    //   //   console.log(messagesRefHook)
-    //   //   console.log(messagesRefHook.current)
-    //   //   // messages = [...messages, message]
-    //   setMessages((messages) => [...messages, message])
-    //   console.log(messages)
-    //   // } else {
-    //   //   //
-    //   //   console.log(messagesRefHook)
-    //   //   console.log(messagesRefHook.current)
-    //   // }
-    // })
-    // client.current?.once("message", (channel: string, tags, message: string, self) => {
-    //   // console.log(message)
-    //   channel = channel.replace("#", "")
-    //   message = `[${channel}] {${tags["display-name"]}}: ${message}`
-    //   console.log(message)
-    //   if (bigStore.channels[channel]?.messages) {
-    //     bigStore.channels[channel].messages.push(message)
-    //   } else {
-    //     set(bigStore.channels, [channel, "messages"], [])
-    //     bigStore.channels[channel].messages.push(message)
-    //   }
-    //   setMessages((messages) => [...messages, message])
-    // })
   }, [])
 
   const join = async (channel: string) => {
@@ -237,10 +242,8 @@ const Main = () => {
 
   return (
     <section>
-      <div className="mt-4">
-        Connected {smallStore.connected ? "Yes" : "No"}
-      </div>
-      <a href={generateAccessTokenURL(generateNonce('Test'))}>Connect to Twitch</a>
+      <div className="mt-4">Connected {smallStore.connected ? "Yes" : "No"}</div>
+      <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a>
       <div className="mt-4">
         {bigStore.followedChannels.map((channel: string, i: number) => {
           const html = !bigStore.joinedChannels.includes(channel) ? (
