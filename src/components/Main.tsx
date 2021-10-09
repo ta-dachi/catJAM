@@ -5,6 +5,7 @@ import { Virtuoso } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
 import axios from "axios"
 import { useLocation } from "react-router"
+import { ApiClient } from '@twurple/api';
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
@@ -66,7 +67,7 @@ type SmallStore = {
 type AuthStore = {
   access_token: string
   authProvider: StaticAuthProvider | null
-  apiClient: any
+  apiClient: ApiClient | null
 }
 
 const initialBigStore: BigStore = {
@@ -124,9 +125,12 @@ const Main = () => {
           const authProvider = new StaticAuthProvider(clientId, access_token)
           const apiClient = new ApiClient({authProvider: authProvider})
           
-          let newAuthStore = { access_token: access_token, authProvider: authProvider,  }
+          let newAuthStore = { access_token: access_token, authProvider: authProvider,  apiClient: apiClient}
           setAuthStore(() => newAuthStore)
         }
+
+        // getFollows
+        // authStore.apiClient.users.getFollows()
 
         // twitch connect
         // await client.current.disconnect()
