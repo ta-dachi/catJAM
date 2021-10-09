@@ -5,7 +5,7 @@ import { Virtuoso } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
 import axios from "axios"
 import { useLocation } from "react-router"
-import { ApiClient } from '@twurple/api';
+import { ApiClient, HelixFollow, HelixPaginatedResultWithTotal, HelixPrivilegedUser } from '@twurple/api';
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
@@ -68,6 +68,8 @@ type AuthStore = {
   access_token: string
   authProvider: StaticAuthProvider | null
   apiClient: ApiClient | null
+  userMe: HelixPrivilegedUser | null
+  follows: HelixPaginatedResultWithTotal<HelixFollow> | null
 }
 
 const initialBigStore: BigStore = {
@@ -87,7 +89,10 @@ const initialSmallStore: SmallStore = {
 const initialAuthStore: AuthStore = {
   access_token: "",
   authProvider: null,
-  apiClient: null
+  apiClient: null,
+  //
+  userMe: null,
+  follows: null
 }
 
 function urlHash2Obj(hash: string): any {
@@ -124,8 +129,17 @@ const Main = () => {
           const access_token = urlHash2Obj(hash)["access_token"]
           const authProvider = new StaticAuthProvider(clientId, access_token)
           const apiClient = new ApiClient({authProvider: authProvider})
-          
-          let newAuthStore = { access_token: access_token, authProvider: authProvider,  apiClient: apiClient}
+          const userMe = await apiClient.users.getMe(false)
+          const follows = await userMe.getFollows()
+          console.log(follows)
+          for (const follow of follows.data) {
+            console.log(follow.followedUserName)
+          }
+          let newAuthStore = { access_token: access_token, authProvider: authProvider,  apiClient: apiClient, userMe: userMe, follows: follows}
+
+          console.log(newAuthStore)
+          // console.log(await newAuthStore.apiClient?.users.getMe(false))
+
           setAuthStore(() => newAuthStore)
         }
 
@@ -140,6 +154,8 @@ const Main = () => {
 
         let newSmallStore = smallStore
         smallStore.connected = true
+        // console.log(authStore.apiClient)
+        // console.log(await authStore.apiClient?.users.getMe(false))
         setSmallStore(() => newSmallStore)
 
         // setSmallStore({ name: "kaurtube" })
