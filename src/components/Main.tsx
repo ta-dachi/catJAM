@@ -5,7 +5,7 @@ import { Virtuoso } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { useLocation } from "react-router"
-import { ApiClient, HelixFollow, HelixPaginatedResultWithTotal, HelixPrivilegedUser } from "@twurple/api"
+import { ApiClient, HelixPrivilegedUser } from "@twurple/api"
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
@@ -44,10 +44,27 @@ function generateAccessTokenURL(nonce?: string) {
 &nonce=${nonce}`
 }
 
+export interface HelixCustomFollow {
+  id: string
+  user_id: string
+  user_login: string
+  user_name: string
+  game_id: string
+  game_name: string
+  type: string
+  title: string
+  viewer_count: number
+  started_at: Date
+  language: string
+  thumbnail_url: string
+  tag_ids: string[]
+  is_mature: boolean
+}
+
 //
 type BigStore = {
   //
-  followedChannels: string[]
+  follows: HelixCustomFollow[]
   joinedChannels: string[]
   channels: {
     [key: string]: {
@@ -69,12 +86,12 @@ type AuthStore = {
   authProvider: StaticAuthProvider | null
   apiClient: ApiClient | null
   userMe: HelixPrivilegedUser | null
-  follows: HelixPaginatedResultWithTotal<HelixFollow> | null
+  follows: HelixCustomFollow[] | null
 }
 
 const initialBigStore: BigStore = {
   //
-  followedChannels: ["esl_sc2", "epicnamebro"],
+  follows: [],
   joinedChannels: [],
   channels: {},
   //
@@ -82,7 +99,7 @@ const initialBigStore: BigStore = {
 }
 
 const initialSmallStore: SmallStore = {
-  name: "kaurtube",
+  name: "",
   connected: false,
 }
 
@@ -95,35 +112,17 @@ const initialAuthStore: AuthStore = {
   follows: null,
 }
 
-export interface HelixCustomFollow {
-    id:            string;
-    user_id:       string;
-    user_login:    string;
-    user_name:     string;
-    game_id:       string;
-    game_name:     string;
-    type:          string;
-    title:         string;
-    viewer_count:  number;
-    started_at:    Date;
-    language:      string;
-    thumbnail_url: string;
-    tag_ids:       string[];
-    is_mature:     boolean;
-}
-
-
 /** Gets streams followed by user, pass cursor to after for next */
-const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<HelixCustomFollow>> => {
+const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<{data: HelixCustomFollow[], pagination: any}>> => {
   const url = "https://api.twitch.tv/helix/streams/followed"
   const config: AxiosRequestConfig = {
     headers: {
       Authorization: `Bearer ${access_token}`,
-      'Client-id': client_id
+      "Client-id": client_id,
     },
     params: {
-        user_id: user_id,
-        after: after 
+      user_id: user_id,
+      after: after,
     },
   }
   return axios.get(url, config)
@@ -164,18 +163,22 @@ const Main = () => {
           const authProvider = new StaticAuthProvider(clientId, access_token)
           const apiClient = new ApiClient({ authProvider: authProvider })
           const userMe = await apiClient.users.getMe(false)
-          const follows = await userMe.getFollows()
-          console.log(access_token)
-          for (const follow of follows.data) {
-            console.log(follow.followedUserName)
-          }
-          console.log((await getStreamsFollowed(access_token, clientId, userMe.id)).data)
+          const follows = (await getStreamsFollowed(access_token, clientId, userMe.id)).data.data
+          console.log(follows)
+
           let newAuthStore = { access_token: access_token, authProvider: authProvider, apiClient: apiClient, userMe: userMe, follows: follows }
 
           console.log(newAuthStore)
           // console.log(await newAuthStore.apiClient?.users.getMe(false))
 
           setAuthStore(() => newAuthStore)
+
+          let newBigStore = bigStore
+          newBigStore.follows = follows
+          console.log(newBigStore)
+          setBigStore(() => newBigStore)
+
+        //   forceUpdate()
         }
 
         // getFollows
@@ -300,19 +303,22 @@ const Main = () => {
       <div className="mt-4">Connected {smallStore.connected ? "Yes" : "No"}</div>
       <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a>
       <div className="mt-4">
-        {bigStore.followedChannels.map((channel: string, i: number) => {
-          const html = !bigStore.joinedChannels.includes(channel) ? (
+
+        {bigStore.follows?.map((follow, i: number) => {
+          const html = !bigStore.joinedChannels.includes(follow.user_login) ? (
             <div key={i}>
-              {channel}
-              <button className="ml-4" onClick={() => join(channel)}>
+              {follow.user_name}
+              <span className="ml-4">{follow.viewer_count}</span>
+              <button className="ml-4" onClick={() => join(follow.user_login)}>
                 Join
               </button>
             </div>
           ) : (
-            bigStore.joinedChannels.includes(channel) && (
+            bigStore.joinedChannels.includes(follow.user_login) && (
               <div key={i}>
-                {channel}
-                <button className="ml-4" onClick={() => part(channel)}>
+                {follow.user_name}
+                <span className="ml-4">{follow.viewer_count}</span>
+                <button className="ml-4" onClick={() => part(follow.user_login)}>
                   Leave
                 </button>
               </div>
