@@ -3,16 +3,16 @@ import { useRef, useState, useEffect, useReducer } from "react"
 import tmi from "tmi.js"
 import { Virtuoso } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
-import axios from "axios"
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { useLocation } from "react-router"
-import { ApiClient, HelixFollow, HelixPaginatedResultWithTotal, HelixPrivilegedUser } from '@twurple/api';
+import { ApiClient, HelixFollow, HelixPaginatedResultWithTotal, HelixPrivilegedUser } from "@twurple/api"
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
 const clientSecret: string = process.env.REACT_APP_SECRET as string
 const redirectUri: string = "https://192.168.1.14:3000/home"
-const scopeUri: string = "chat%3Aread+user_read"
-const scope: string[] = ["chat:read", "user_read"]
+const scopeUri: string = "chat%3Aread+user_read+user:read:follows"
+const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
 //
 const OAUTH_URL: string = "https://id.twitch.tv/oauth2/" // Change this if twitch's API changes
 const OAUTH_REVOKE: string = "revoke"
@@ -92,7 +92,41 @@ const initialAuthStore: AuthStore = {
   apiClient: null,
   //
   userMe: null,
-  follows: null
+  follows: null,
+}
+
+export interface HelixCustomFollow {
+    id:            string;
+    user_id:       string;
+    user_login:    string;
+    user_name:     string;
+    game_id:       string;
+    game_name:     string;
+    type:          string;
+    title:         string;
+    viewer_count:  number;
+    started_at:    Date;
+    language:      string;
+    thumbnail_url: string;
+    tag_ids:       string[];
+    is_mature:     boolean;
+}
+
+
+/** Gets streams followed by user, pass cursor to after for next */
+const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<HelixCustomFollow>> => {
+  const url = "https://api.twitch.tv/helix/streams/followed"
+  const config: AxiosRequestConfig = {
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+      'Client-id': client_id
+    },
+    params: {
+        user_id: user_id,
+        after: after 
+    },
+  }
+  return axios.get(url, config)
 }
 
 function urlHash2Obj(hash: string): any {
@@ -126,16 +160,17 @@ const Main = () => {
       try {
         // queryparams
         if (hash) {
-          const access_token = urlHash2Obj(hash)["access_token"]
+          const access_token = urlHash2Obj(hash)["access_token"] as string
           const authProvider = new StaticAuthProvider(clientId, access_token)
-          const apiClient = new ApiClient({authProvider: authProvider})
+          const apiClient = new ApiClient({ authProvider: authProvider })
           const userMe = await apiClient.users.getMe(false)
           const follows = await userMe.getFollows()
-          console.log(follows)
+          console.log(access_token)
           for (const follow of follows.data) {
             console.log(follow.followedUserName)
           }
-          let newAuthStore = { access_token: access_token, authProvider: authProvider,  apiClient: apiClient, userMe: userMe, follows: follows}
+          console.log((await getStreamsFollowed(access_token, clientId, userMe.id)).data)
+          let newAuthStore = { access_token: access_token, authProvider: authProvider, apiClient: apiClient, userMe: userMe, follows: follows }
 
           console.log(newAuthStore)
           // console.log(await newAuthStore.apiClient?.users.getMe(false))
