@@ -10,7 +10,7 @@ import { ApiClient, HelixPrivilegedUser } from "@twurple/api"
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
 const clientSecret: string = process.env.REACT_APP_SECRET as string
-const redirectUri: string = "https://192.168.1.14:3000/home"
+const redirectUri: string = "https://192.168.1.14:3000/Chat"
 const scopeUri: string = "chat%3Aread+user_read+user:read:follows"
 const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
 //
