@@ -38,25 +38,25 @@ const App: React.FC = () => {
   return (
     <IonApp>
       <IonReactRouter>
-        <IonTabs>
-          <IonRouterOutlet>
-            <Switch>
-              <Route exact path="/">
-                <Chat />
-              </Route>
-              <Route exact path="/login">
-                <Login />
-              </Route>
-              <Route exact path="/test">
-                Test
-              </Route>
-              <Route path="*">
-                <div>404</div>
-                {/* <Redirect to="/Chat" /> */}
-              </Route>
-            </Switch>
-          </IonRouterOutlet>
+        <IonRouterOutlet>
+          <Switch>
+            <Route exact path="/home">
+              <Chat />
+            </Route>
+            <Route exact path="/login">
+              <Login />
+            </Route>
+            <Route exact path="/test">
+              Test
+            </Route>
+            <Route path="*">
+              <div>404</div>
+              {/* <Redirect to="/Chat" /> */}
+            </Route>
+          </Switch>
+        </IonRouterOutlet>
 
+        {/* <IonTabs>
           <IonTabBar slot="top">
             <IonTabButton tab="" href="/">
               <IonLabel>Chat</IonLabel>
@@ -66,7 +66,7 @@ const App: React.FC = () => {
               <IonLabel>test</IonLabel>
             </IonTabButton>
           </IonTabBar>
-        </IonTabs>
+        </IonTabs> */}
       </IonReactRouter>
     </IonApp>
   )
