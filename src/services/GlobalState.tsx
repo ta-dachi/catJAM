@@ -3,12 +3,12 @@ import { StaticAuthProvider } from "@twurple/auth/lib"
 import { makeObservable, observable, action, autorun, makeAutoObservable } from "mobx"
 import tmi from "tmi.js"
 
-type Channels = {
+// Chat
+export type Channels = {
   [key: string]: {
     messages: string[]
   }
 }
-
 export interface HelixCustomFollow {
   id: string
   user_id: string
@@ -31,11 +31,11 @@ export type IGlobalState = {
   joinedChannels: string[] | undefined
   channels: Channels
   token: {}
-  name: string
+  name: string | null
   connected: boolean
 
   // Auth
-  access_token: string
+  access_token: string | null
   authProvider: StaticAuthProvider | null
   apiClient: ApiClient | null
   userMe: HelixPrivilegedUser | null
@@ -57,11 +57,11 @@ class GlobalState {
     joinedChannels: [],
     channels: {},
     token: {},
-    name: "",
+    name: null,
     connected: false,
 
     // Auth
-    access_token: "",
+    access_token: null,
     authProvider: null,
     apiClient: null,
 
@@ -77,12 +77,15 @@ class GlobalState {
       store: observable,
       update: action,
     })
+    console.log('GlobalState created')
   }
 
   update(newStore: Partial<IGlobalState>) {
     this.store = {...this.store, ...newStore}
   }
 }
+
+
 
 export const globalState = new GlobalState()
 // export const GlobalStateContext = createContext<GlobalState>()

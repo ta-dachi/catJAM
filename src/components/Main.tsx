@@ -145,21 +145,23 @@ const Main = observer(() => {
  
         // queryparams
         if (hash) {
-          const access_token = urlHash2Obj(hash)["access_token"] as string
+          let access_token = urlHash2Obj(hash)["access_token"] as string
+          if (access_token.length <= 10) {
+            access_token = globalState.store.access_token as string
+          }
           const authProvider = new StaticAuthProvider(clientId, access_token)
           const apiClient = new ApiClient({ authProvider: authProvider })
           const userMe = await apiClient.users.getMe(false)
           const follows = (await getStreamsFollowed(access_token, clientId, userMe.id)).data.data
-          console.log(follows)
 
           globalState.update({ access_token: access_token, authProvider: authProvider, apiClient: apiClient, userMe: userMe, follows: follows })
+
+          await globalState.client.connect()
+
+          console.log("Connected!")
+
+          globalState.update({connected: true})
         }
-
-        await globalState.client.connect()
-
-        console.log("Connected!")
-
-        globalState.update({connected: true})
 
         globalState.client.removeAllListeners()
 
@@ -194,65 +196,16 @@ const Main = observer(() => {
     main()
   }, [])
 
-  const join = async (channel: string) => {
-    try {
-      channel = channel.replace("#", "").toLowerCase()
-      console.log(channel)
-      if (globalState.store.joinedChannels?.includes(channel)) {
-        return
-      }
 
-      await globalState.client.join(channel)
-
-      let channels: Channels = globalState.store.channels
-      let joinedChannels = globalState.client.getChannels() ? globalState.client.getChannels() : []
-
-      if (channels.messages) {
-        set(channels, [channel, "messages"], [])
-      }
-
-      joinedChannels = joinedChannels
-        .map((chan: string) => {
-          chan = chan.replace("#", "").toLowerCase()
-          return chan
-        })
-        .sort()
-
-      globalState.update({joinedChannels: joinedChannels})
-
-      // forceUpdate()
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  const part = async (channel: string) => {
-    try {
-      await globalState.client.part(channel)
-
-      let joinedChannels = globalState.client.getChannels() ? globalState.client.getChannels() : []
-
-      joinedChannels = joinedChannels
-        .map((chan: string) => {
-          chan = chan.replace("#", "").toLowerCase()
-          return chan
-        })
-        .sort()
-
-      globalState.update({joinedChannels: joinedChannels})
-    } catch (error) {
-      console.error(error)
-    }
-  }
 
   return (
     <section>
       {globalState.store.name}
-      <div className="mt-4">Connected {globalState.store.connected ? "Yes" : "No"}</div>
+      <div className="mt-4">Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
 
-      {globalState.store.connected ?? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a>}
+      {(!globalState.store.access_token) ? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a> : ''}
       
-      <div className="mt-4">
+      {/* <div className="mt-4">
         {globalState.store.follows?.map((follow, i: number) => {
           const html = !globalState.store.joinedChannels?.includes(follow.user_login) ? (
             <div key={i}>
@@ -275,7 +228,7 @@ const Main = observer(() => {
           )
           return html
         })}
-      </div>
+      </div> */}
 
 
       {/* View Multiple */}

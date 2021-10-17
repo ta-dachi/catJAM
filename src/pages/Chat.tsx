@@ -14,7 +14,7 @@ const Chat: React.FC = () => {
 
   return (
     <section className="flex w-screen h-screen overflow-y-scroll">
-        <div className="lg:w-52 lg:bg-white">
+        <div className="lg:w-60 lg:bg-white">
           <Container />
         </div>
         <div className="flex-grow">
