@@ -1,5 +1,7 @@
-import { Redirect, Route, Switch } from "react-router-dom"
-import { IonApp, IonBadge, IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react"
+// import '@hookstate/devtools'
+//
+import { Route, Switch } from "react-router-dom"
+import { IonApp, IonRouterOutlet } from "@ionic/react"
 import { IonReactRouter } from "@ionic/react-router"
 import Chat from "./pages/Chat"
 import "./theme/tailwind.css"
@@ -29,7 +31,7 @@ const App: React.FC = () => {
   // componentDidMount()
   useEffect(() => {
     async function main() {
-      console.log("test")
+      console.log("App Component")
     }
 
     main()

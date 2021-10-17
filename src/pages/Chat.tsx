@@ -1,32 +1,26 @@
-import { IonBadge, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonLabel, IonList, IonMenu, IonPage, IonTabBar, IonTabButton, IonTabs, IonTitle, IonToolbar } from "@ionic/react"
 import Main from "../components/Main"
 import "./Chat.css"
-import catJAM_gif from "../assets/catJAM.gif"
-import { map } from "lodash-es"
 import { useEffect } from "react"
 import Container from "../components/Container"
 
 const Chat: React.FC = () => {
   useEffect(() => {
     async function main() {
-      console.log("test")
+      console.log("Chat Component Rendered")
     }
 
     main()
   }, [])
 
   return (
-    <div>
-      <div className="flex lg:flex-row lg:h-scree">
+    <section className="flex w-screen h-screen overflow-y-scroll">
         <div className="lg:w-52 lg:bg-white">
           <Container />
-
         </div>
-        <div>
-        <Main />
+        <div className="flex-grow">
+          <Main />
         </div>
-      </div>
-    </div>
+    </section>
   )
 }
 

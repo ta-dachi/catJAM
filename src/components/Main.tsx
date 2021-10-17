@@ -1,16 +1,18 @@
 import set from "lodash-es/set"
-import { useRef, useState, useEffect, useReducer } from "react"
+import { useRef, useEffect, useReducer, createContext } from "react"
 import tmi from "tmi.js"
 import { Virtuoso } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { useLocation } from "react-router"
 import { ApiClient, HelixPrivilegedUser } from "@twurple/api"
+import { globalState, HelixCustomFollow, IGlobalState } from "../services/GlobalState"
+import { observer } from "mobx-react-lite"
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
 const clientSecret: string = process.env.REACT_APP_SECRET as string
-const redirectUri: string = "https://192.168.1.14:3000/Chat"
+const redirectUri: string = "https://192.168.1.14:3000/home"
 const scopeUri: string = "chat%3Aread+user_read+user:read:follows"
 const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
 //
@@ -44,76 +46,56 @@ function generateAccessTokenURL(nonce?: string) {
 &nonce=${nonce}`
 }
 
-export interface HelixCustomFollow {
-  id: string
-  user_id: string
-  user_login: string
-  user_name: string
-  game_id: string
-  game_name: string
-  type: string
-  title: string
-  viewer_count: number
-  started_at: Date
-  language: string
-  thumbnail_url: string
-  tag_ids: string[]
-  is_mature: boolean
-}
-
-//
-type BigStore = {
-  //
-  follows: HelixCustomFollow[]
-  joinedChannels: string[]
-  channels: {
-    [key: string]: {
-      messages: string[]
-    }
+type Channels = {
+  [key: string]: {
+    messages: string[]
   }
-  //
-  token: {}
 }
 
-type SmallStore = {
-  //
-  name: string
-  connected: boolean
-}
+// type GlobalStore = {
+//   // Chat
+//   joinedChannels: string[] | undefined
+//   channels: Channels
+//   token: {}
+//   name: string
+//   connected: boolean
 
-type AuthStore = {
-  access_token: string
-  authProvider: StaticAuthProvider | null
-  apiClient: ApiClient | null
-  userMe: HelixPrivilegedUser | null
-  follows: HelixCustomFollow[] | null
-}
+//   // Auth
+//   access_token: string
+//   authProvider: StaticAuthProvider | null
+//   apiClient: ApiClient | null
+//   userMe: HelixPrivilegedUser | null
+//   follows: HelixCustomFollow[] | null
+// }
 
-const initialBigStore: BigStore = {
-  //
-  follows: [],
-  joinedChannels: [],
-  channels: {},
-  //
-  token: {},
-}
+// const initialGlobalStore: GlobalStore = {
+//   // Chat
+//   joinedChannels: [],
+//   channels: {},
+//   token: {},
+//   name: "",
+//   connected: false,
 
-const initialSmallStore: SmallStore = {
-  name: "",
-  connected: false,
-}
+//   access_token: "",
+//   authProvider: null,
+//   apiClient: null,
+//   // Auth
+//   userMe: null,
+//   follows: null,
+// }
 
-const initialAuthStore: AuthStore = {
-  access_token: "",
-  authProvider: null,
-  apiClient: null,
-  //
-  userMe: null,
-  follows: null,
-}
+// const globalState = createState(initialGlobalStore)
+// const wrapState = (s: State<GlobalStore>) => ({
+//   get: () => s,
+//   mergeValue: (newValue: Partial<GlobalStore>) => s.merge(newValue)
+// })
+
+// // The following 2 functions can be exported now:
+// export const accessGlobalState = () => wrapState(globalState)
+// export const useGlobalState = () => wrapState(useState(globalState))
 
 /** Gets streams followed by user, pass cursor to after for next */
-const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<{data: HelixCustomFollow[], pagination: any}>> => {
+const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<{ data: HelixCustomFollow[]; pagination: any }>> => {
   const url = "https://api.twitch.tv/helix/streams/followed"
   const config: AxiosRequestConfig = {
     headers: {
@@ -135,18 +117,20 @@ function urlHash2Obj(hash: string): any {
     .reduce((pre, [key, value]) => ({ ...pre, [key]: value }), {})
 }
 
-const Main = () => {
-  const client = useRef(
-    new tmi.client({
-      // @ts-ignore
-      options: { debug: false, skipMembership: true },
-      // channels: [...props.channels],
-    })
-  )
+const Main = observer(() => {
+  // const client = useRef(
+  //   new tmi.client({
+  //     // @ts-ignore
+  //     options: { debug: false, skipMembership: true },
+  //     // channels: [...props.channels],
+  //   })
+  // )
 
-  const [bigStore, setBigStore] = useState(initialBigStore)
-  const [smallStore, setSmallStore] = useState(initialSmallStore)
-  const [authStore, setAuthStore] = useState(initialAuthStore)
+  // const [bigStore, setBigStore] = useState(initialBigStore)
+  // const [smallStore, setSmallStore] = useState(initialSmallStore)
+  // const [authStore, setAuthStore] = useState(initialAuthStore)
+  // const state = useState(globalState)
+
   // forceUpdate
   const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
   // const messagesRefHook = useRef(messages)
@@ -157,6 +141,8 @@ const Main = () => {
   useEffect(() => {
     async function main() {
       try {
+        console.log("Main Component Rendered")
+ 
         // queryparams
         if (hash) {
           const access_token = urlHash2Obj(hash)["access_token"] as string
@@ -166,73 +152,43 @@ const Main = () => {
           const follows = (await getStreamsFollowed(access_token, clientId, userMe.id)).data.data
           console.log(follows)
 
-          let newAuthStore = { access_token: access_token, authProvider: authProvider, apiClient: apiClient, userMe: userMe, follows: follows }
-
-          console.log(newAuthStore)
-          // console.log(await newAuthStore.apiClient?.users.getMe(false))
-
-          setAuthStore(() => newAuthStore)
-
-          let newBigStore = bigStore
-          newBigStore.follows = follows
-          console.log(newBigStore)
-          setBigStore(() => newBigStore)
-
-        //   forceUpdate()
+          globalState.update({ access_token: access_token, authProvider: authProvider, apiClient: apiClient, userMe: userMe, follows: follows })
         }
 
-        // getFollows
-        // authStore.apiClient.users.getFollows()
-
-        // twitch connect
-        // await client.current.disconnect()
-        await client.current.connect()
+        await globalState.client.connect()
 
         console.log("Connected!")
 
-        let newSmallStore = smallStore
-        smallStore.connected = true
-        // console.log(authStore.apiClient)
-        // console.log(await authStore.apiClient?.users.getMe(false))
-        setSmallStore(() => newSmallStore)
+        globalState.update({connected: true})
 
-        // setSmallStore({ name: "kaurtube" })
-        client.current?.removeAllListeners()
+        globalState.client.removeAllListeners()
 
-        client.current?.addListener("message", (channel: string, tags, message: string, self) => {
+        globalState.client.addListener("message", (channel: string, tags, message: string, self) => {
           channel = channel.replace("#", "").toLowerCase()
+          // const joinedChannels = state.value.joinedChannels
 
-          if (bigStore.joinedChannels.includes(channel)) {
-            // console.log(message)
-            // channel = channel.replace("#", "").toLowerCase()
+          if (globalState.store.joinedChannels?.includes(channel)) {
             message = `[${channel}] {${tags["display-name"]}}: ${message}`
-
             console.log(message)
-            let newBigStore = bigStore
-            if (newBigStore.channels[channel]?.messages) {
-              newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
+            if (globalState.store.channels[channel]?.messages) {
+              const length = globalState.store.channels[channel]?.messages.length
+              // globalState.store.channels[channel].messages[length] = message
+              // TODO Optimize this code
+              let currentChannels = {...globalState.store.channels }
+              // Set the message
+              currentChannels[channel].messages[length] = message
+              globalState.update({...currentChannels})
             } else {
-              set(newBigStore.channels, [channel, "messages"], [])
-              newBigStore.channels[channel].messages = [...newBigStore.channels[channel].messages, message]
+              const newChannel: Channels = {}
+              set(newChannel, [channel, "messages"], [])
+              // const currentChannels = {...globalState.store.channels }
+              globalState.update({channels: {...globalState.store.channels, ...newChannel}})
             }
-
-            // let newMessages = messages
-            // newMessages.push(message)
-            // setMessages(() => newMessages)
-            console.log(newBigStore)
-            console.log(authStore)
-            // setMessages(() => [...messages, message])
-            setBigStore(() => newBigStore)
-
-            forceUpdate()
           }
         })
       } catch (error) {
         console.error(error)
       }
-
-      // console.log(response)
-      forceUpdate()
     }
 
     main()
@@ -242,31 +198,29 @@ const Main = () => {
     try {
       channel = channel.replace("#", "").toLowerCase()
       console.log(channel)
-      if (bigStore.joinedChannels.includes(channel)) {
+      if (globalState.store.joinedChannels?.includes(channel)) {
         return
       }
 
-      await client?.current.join(channel)
+      await globalState.client.join(channel)
 
-      let newBigStore = bigStore
+      let channels: Channels = globalState.store.channels
+      let joinedChannels = globalState.client.getChannels() ? globalState.client.getChannels() : []
 
-      newBigStore.joinedChannels = client?.current.getChannels() ? client?.current.getChannels() : []
-
-      if (!newBigStore.channels[channel]?.messages) {
-        set(newBigStore.channels, [channel, "messages"], [])
+      if (channels.messages) {
+        set(channels, [channel, "messages"], [])
       }
 
-      newBigStore.joinedChannels = newBigStore.joinedChannels
-        .map((chan) => {
+      joinedChannels = joinedChannels
+        .map((chan: string) => {
           chan = chan.replace("#", "").toLowerCase()
           return chan
         })
         .sort()
 
-      console.log(newBigStore)
-      setBigStore(() => newBigStore)
+      globalState.update({joinedChannels: joinedChannels})
 
-      forceUpdate()
+      // forceUpdate()
     } catch (error) {
       console.error(error)
     }
@@ -274,25 +228,18 @@ const Main = () => {
 
   const part = async (channel: string) => {
     try {
-      console.log(bigStore)
-      await client?.current.part(channel)
+      await globalState.client.part(channel)
 
-      let newBigStore = bigStore
+      let joinedChannels = globalState.client.getChannels() ? globalState.client.getChannels() : []
 
-      newBigStore.joinedChannels = client?.current.getChannels() ? client?.current.getChannels() : []
-
-      newBigStore.joinedChannels = newBigStore.joinedChannels
-        .map((chan) => {
+      joinedChannels = joinedChannels
+        .map((chan: string) => {
           chan = chan.replace("#", "").toLowerCase()
           return chan
         })
         .sort()
 
-      setBigStore(() => newBigStore)
-
-      console.log(newBigStore)
-
-      forceUpdate()
+      globalState.update({joinedChannels: joinedChannels})
     } catch (error) {
       console.error(error)
     }
@@ -300,12 +247,14 @@ const Main = () => {
 
   return (
     <section>
-      <div className="mt-4">Connected {smallStore.connected ? "Yes" : "No"}</div>
-      <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a>
-      <div className="mt-4">
+      {globalState.store.name}
+      <div className="mt-4">Connected {globalState.store.connected ? "Yes" : "No"}</div>
 
-        {bigStore.follows?.map((follow, i: number) => {
-          const html = !bigStore.joinedChannels.includes(follow.user_login) ? (
+      {globalState.store.connected ?? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a>}
+      
+      <div className="mt-4">
+        {globalState.store.follows?.map((follow, i: number) => {
+          const html = !globalState.store.joinedChannels?.includes(follow.user_login) ? (
             <div key={i}>
               {follow.user_name}
               <span className="ml-4">{follow.viewer_count}</span>
@@ -314,7 +263,7 @@ const Main = () => {
               </button>
             </div>
           ) : (
-            bigStore.joinedChannels.includes(follow.user_login) && (
+            globalState.store.joinedChannels?.includes(follow.user_login) && (
               <div key={i}>
                 {follow.user_name}
                 <span className="ml-4">{follow.viewer_count}</span>
@@ -328,54 +277,16 @@ const Main = () => {
         })}
       </div>
 
-      {/* <div className="mt-4">
-        {Object.keys(bigStore.channels).map((channel) => {
-          return bigStore.channels[channel]?.messages.map((message, i) => {
-            if (bigStore.joinedChannels.includes(channel)) {
-              return <div key={i}>{message}</div>
-            }
-          })
-        })}
-      </div> */}
-
-      {/* View chosen */}
 
       {/* View Multiple */}
-      {/* <div>
-        {Object.keys(bigStore.channels).map((channel) => {
-          return (
-            <Virtuoso
-              key={channel}
-              style={{ height: "200px" }}
-              totalCount={bigStore.channels[channel]?.messages.length}
-              itemContent={(index) => {
-                return (
-                  <div key={index}>
-                    {index} {bigStore.channels[channel].messages[index]}
-                  </div>
-                )
-                // return bigStore.channels[channel]?.messages.map((message, i) => {
-                //   if (bigStore.joinedChannels.includes(channel)) {
-
-                //   }
-                // })
-              }}
-            />
-          )
-        })}
-      </div> */}
-
-      {/* {Object.keys(bigStore.joinedChannels).map((channel) => {
-        return bigStore.channels[channel]?.messages ? <div>"true"</div> : <div>false</div>
-      })} */}
       <div>
-        {bigStore.joinedChannels.map((channel: string) => {
-          return <ChatWindow key={channel} channel={channel} messages={bigStore.channels[channel]?.messages ? bigStore.channels[channel]?.messages : []} />
+        {globalState.store.joinedChannels?.map((channel: string) => {
+          return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
         })}
       </div>
     </section>
   )
-}
+})
 
 export default Main
 
@@ -385,14 +296,14 @@ type ChatWindowProps = {
 }
 
 const ChatWindow = (props: ChatWindowProps) => {
-  const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
+  // const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
   return (
     <section>
       {props.channel}
       <Virtuoso
         key={props.channel}
-        style={{ height: "200px" }}
+        style={{ height: "200px", backgroundColor: 'black' }}
         totalCount={props.messages?.length ? props.messages?.length : 0}
         itemContent={(index) => {
           return (

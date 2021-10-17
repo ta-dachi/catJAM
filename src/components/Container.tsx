@@ -1,21 +1,32 @@
-import { useEffect, useState } from "react"
-import { MenuSolid } from "@graywolfai/react-heroicons" // or
+import { useEffect, useRef, useState } from "react"
+// import { MenuSolid } from "@graywolfai/react-heroicons" // or
+// import { accessGlobalState } from "./Main"
 
-type State = {
-  //
-  showMenu: boolean
-}
+// type State = {
+//   //
+//   showMenu: boolean
+// }
 
-const initialState: State = {
-  showMenu: false,
-}
+// const initialState: State = {
+//   showMenu: false,
+// }
 
 const Container = () => {
-  const [state, setState] = useState(initialState)
+  // const timeout = useRef(null)
+  // const [state, setState] = useState(initialState)
 
   useEffect(() => {
     async function main() {
-      console.log("test")
+      console.log("Container Rendered")
+
+      // if (timeout.current) {
+      //   clearTimeout(timeout.current)
+      //   timeout.current = undefined
+      // }
+
+      // timeout.current = setInterval(() => {
+      //   console.log(accessGlobalState().get())
+      // }, 3000)
     }
 
     main()
@@ -23,9 +34,7 @@ const Container = () => {
 
   return (
     <div>
-      <div className="flex lg:flex-row lg:w-52 lg:h-screen lg:bg-white">
-        asfasd
-      </div>
+      <div className="flex lg:flex-row lg:w-52 lg:h-screen lg:bg-white">Container</div>
     </div>
   )
 }

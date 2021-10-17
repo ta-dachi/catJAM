@@ -18,14 +18,16 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "useDefineForClassFields": true
   },
   "baseUrl": ".",
   "paths": {
     "@/components/*": ["components/*"],
     "@/lib/*": ["lib/*"],
-    "@/assets/*": ["assets/*"]
+    "@/assets/*": ["assets/*"],
+    "@/services/*": ["services/*"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "../pastebin.tsx"],
   "exclude": ["node_modules"]
 }
