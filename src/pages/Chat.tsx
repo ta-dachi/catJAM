@@ -1,7 +1,7 @@
 import Main from "../components/Main"
 import "./Chat.css"
 import { useEffect } from "react"
-import Container from "../components/Container"
+import SideMenu from "../components/SideMenu"
 
 const Chat: React.FC = () => {
   useEffect(() => {
@@ -15,7 +15,7 @@ const Chat: React.FC = () => {
   return (
     <section className="flex w-screen h-screen overflow-y-scroll">
         <div className="lg:w-60 lg:bg-white">
-          <Container />
+          <SideMenu />
         </div>
         <div className="flex-grow">
           <Main />

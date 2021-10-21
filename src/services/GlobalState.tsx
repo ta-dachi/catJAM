@@ -42,7 +42,7 @@ export type IGlobalState = {
   userMe: HelixPrivilegedUser | null
   follows: HelixCustomFollow[] | null
 
-  // Container
+  // SideMenu
   showMenu: boolean
 }
 
@@ -64,7 +64,7 @@ class GlobalState {
     userMe: null,
     follows: null,
 
-    // Container
+    // SideMenu
     showMenu: false,
   }
 

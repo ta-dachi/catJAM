@@ -15,7 +15,7 @@ import { Channels, globalState, HelixCustomFollow } from "../services/GlobalStat
 //   showMenu: false,
 // }
 
-const Container = observer(() => {
+const SideMenu = observer(() => {
   // const timeout = useRef(null)
   // const [state, setState] = useState(initialState)
     // forceUpdate
@@ -23,7 +23,7 @@ const Container = observer(() => {
 
   useEffect(() => {
     async function main() {
-      console.log("Container Rendered")
+      console.log("SideMenu Rendered")
     }
 
     // autorun(() => {
@@ -100,7 +100,7 @@ const Container = observer(() => {
               <div key={i}>
                 {follow.user_name}
                 <span className="ml-4">{follow.viewer_count}</span>
-                <button className="ml-4" onClick={() => part(follow.user_login)}>
+                <button className="ml-4" key={follow.user_login} onClick={() => part(follow.user_login)}>
                   Leave
                 </button>
               </div>
@@ -114,4 +114,4 @@ const Container = observer(() => {
   )
 })
 
-export default Container
+export default SideMenu

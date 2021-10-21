@@ -12,6 +12,12 @@ To develop, run:
   npm run start
 ```
 
+## TODOS
+
+* Hit Enter to send message
+* Auto scroll to the latest message
+* Click button to scroll to the latest message if mid-scroll
+
 ## Resources 
 
 * ionic-react

@@ -1,5 +1,5 @@
 import set from "lodash-es/set"
-import { useRef, useEffect, useReducer, createContext } from "react"
+import { useRef, useEffect, useReducer, createContext, useState } from "react"
 import tmi from "tmi.js"
 import { Virtuoso } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
@@ -13,7 +13,7 @@ import { observer } from "mobx-react-lite"
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
 const clientSecret: string = process.env.REACT_APP_SECRET as string
 const redirectUri: string = "https://192.168.1.14:3000/home"
-const scopeUri: string = "chat%3Aread+user_read+user:read:follows"
+const scopeUri: string = "chat%3Aread+user_read+user:read:follows+chat:edit"
 const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
 //
 const OAUTH_URL: string = "https://id.twitch.tv/oauth2/" // Change this if twitch's API changes
@@ -124,15 +124,13 @@ const Main = observer(() => {
   const hash = useLocation().hash.substr(1) // substr(1) removes the # from first element
 
   // componentDidMount()
-  useEffect(() => {
-
-  }, )
+  useEffect(() => {})
 
   useEffect(() => {
     async function main() {
       try {
         console.log("Main Component Rendered")
- 
+
         // queryparams
         if (hash) {
           let access_token = urlHash2Obj(hash)["access_token"] as string
@@ -151,14 +149,14 @@ const Main = observer(() => {
 
           console.log("Connected!")
 
-          globalState.update({connected: true})
+          globalState.update({ connected: true })
 
           globalState.client?.removeAllListeners()
 
           globalState.client?.addListener("message", (channel: string, tags, message: string) => {
             channel = channel.replace("#", "").toLowerCase()
             // const joinedChannels = state.value.joinedChannels
-  
+
             if (globalState.store.joinedChannels?.includes(channel)) {
               message = `[${channel}] {${tags["display-name"]}}: ${message}`
               console.log(message)
@@ -166,22 +164,19 @@ const Main = observer(() => {
                 const length = globalState.store.channels[channel]?.messages.length
                 // globalState.store.channels[channel].messages[length] = message
                 // TODO Optimize this code
-                let currentChannels = {...globalState.store.channels }
+                let currentChannels = { ...globalState.store.channels }
                 // Set the message
                 currentChannels[channel].messages[length] = message
-                globalState.update({...currentChannels})
+                globalState.update({ ...currentChannels })
               } else {
                 const newChannel: Channels = {}
                 set(newChannel, [channel, "messages"], [])
                 // const currentChannels = {...globalState.store.channels }
-                globalState.update({channels: {...globalState.store.channels, ...newChannel}})
+                globalState.update({ channels: { ...globalState.store.channels, ...newChannel } })
               }
             }
           })
-
         }
-
-
       } catch (error) {
         console.error(error)
       }
@@ -195,12 +190,15 @@ const Main = observer(() => {
       {globalState.store.name}
       <div className="mt-4">Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
 
-      {(!globalState.store.access_token) ? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a> : ''}
+      {!globalState.store.access_token ? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a> : ""}
 
       {/* View Multiple */}
       <div>
         {globalState.store.joinedChannels?.map((channel: string) => {
-          return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
+          return <section key={channel}>
+            <ChatWindow channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
+            <ChatInput channel={channel}></ChatInput>
+          </section>
           // return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
         })}
       </div>
@@ -223,7 +221,7 @@ const ChatWindow = (props: ChatWindowProps) => {
       {props.channel}
       <Virtuoso
         key={props.channel}
-        style={{ height: "200px", backgroundColor: 'black' }}
+        style={{ height: "200px", backgroundColor: "black" }}
         totalCount={props.messages?.length ? props.messages?.length : 0}
         itemContent={(index) => {
           return (
@@ -233,6 +231,27 @@ const ChatWindow = (props: ChatWindowProps) => {
           )
         }}
       />
+    </section>
+  )
+}
+
+type ChatInputProps = {
+  channel: string
+}
+
+const ChatInput = (props: ChatInputProps) => {
+  const [message, setMessage] = useState("")
+
+  const say = async (channel: string, message: string) => {
+    await globalState.client?.say(channel, message)
+    setMessage('')
+  }
+
+  return (
+    <section key={props.channel}>
+      {props.channel}
+      <input type="text" value={message} onChange={(e) => setMessage(e.target.value)}></input>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => say(props.channel, message)}>Chat</button>
     </section>
   )
 }
