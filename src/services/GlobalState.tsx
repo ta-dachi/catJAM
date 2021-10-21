@@ -35,6 +35,10 @@ export type IGlobalState = {
   name: string | null
   connected: boolean
 
+  // Combined Mega Chat
+  //** Combined messages of all channels joined */
+  megaMessages: {channel: string, message: string}[]
+
   // Auth
   access_token: string | null
   authProvider: StaticAuthProvider | null
@@ -55,6 +59,10 @@ class GlobalState {
     token: {},
     name: null,
     connected: false,
+
+    // Combined Mega Chat
+    //** Combined messages of all channels joined */
+    megaMessages: [],
 
     // Auth
     access_token: null,

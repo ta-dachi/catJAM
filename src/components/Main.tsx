@@ -151,15 +151,23 @@ const Main = observer(() => {
 
           globalState.update({ connected: true })
 
+          // DEBUG Leave all channels when restarting for debugging purposes
+          globalState.client?.getChannels().map((channel) => {
+            globalState.client?.part(channel)
+          })
+
           globalState.client?.removeAllListeners()
 
           globalState.client?.addListener("message", (channel: string, tags, message: string) => {
             channel = channel.replace("#", "").toLowerCase()
-            // const joinedChannels = state.value.joinedChannels
-
+            
             if (globalState.store.joinedChannels?.includes(channel)) {
               message = `[${channel}] {${tags["display-name"]}}: ${message}`
-              console.log(message)
+
+              // Add message to combined channel store
+              globalState.store.megaMessages.push({channel: channel, message: message})
+
+              // Add message to existing channel
               if (globalState.store.channels[channel]?.messages) {
                 const length = globalState.store.channels[channel]?.messages.length
                 // globalState.store.channels[channel].messages[length] = message
@@ -168,9 +176,11 @@ const Main = observer(() => {
                 // Set the message
                 currentChannels[channel].messages[length] = message
                 globalState.update({ ...currentChannels })
+              
+              // Make a new key/value for channel
               } else {
                 const newChannel: Channels = {}
-                set(newChannel, [channel, "messages"], [])
+                set(newChannel, [channel, "messages"], [message])
                 // const currentChannels = {...globalState.store.channels }
                 globalState.update({ channels: { ...globalState.store.channels, ...newChannel } })
               }
@@ -191,6 +201,11 @@ const Main = observer(() => {
       <div className="mt-4">Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
 
       {!globalState.store.access_token ? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a> : ""}
+
+      {/* MegaChat */}
+      <div>
+        <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow>
+      </div>
 
       {/* View Multiple */}
       <div>
@@ -213,6 +228,29 @@ type ChatWindowProps = {
   messages: string[]
 }
 
+type MegaChatWindowProps = {
+  megaMessages: {channel: string, message:string}[]
+}
+
+const MegaChatWindow = (props: MegaChatWindowProps) => {
+  return (
+    <section>
+      MegaChat
+      <Virtuoso
+        style={{ height: "200px", backgroundColor: "black" }}
+        totalCount={props.megaMessages?.length ? props.megaMessages?.length : 0}
+        itemContent={(index) => {
+          return (
+            <div key={index}>
+              {index} {props.megaMessages[index].message}
+            </div>
+          )
+        }}
+      />
+    </section>
+  )
+}
+
 const ChatWindow = (props: ChatWindowProps) => {
   // const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
@@ -226,7 +264,7 @@ const ChatWindow = (props: ChatWindowProps) => {
         itemContent={(index) => {
           return (
             <div key={index}>
-              {index} {props.messages[index] && props.messages[index]}
+              {index} {props.messages[index]}
             </div>
           )
         }}
