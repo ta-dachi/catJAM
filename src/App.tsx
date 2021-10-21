@@ -1,6 +1,6 @@
 // import '@hookstate/devtools'
 //
-import { Route, Switch } from "react-router-dom"
+import { Redirect, Route, Switch } from "react-router-dom"
 import { IonApp, IonRouterOutlet } from "@ionic/react"
 import { IonReactRouter } from "@ionic/react-router"
 import Chat from "./pages/Chat"
@@ -50,6 +50,9 @@ const App: React.FC = () => {
             </Route>
             <Route exact path="/test">
               Test
+            </Route>
+            <Route path="">
+              <Redirect to="/home" />
             </Route>
             <Route path="*">
               <div>404</div>

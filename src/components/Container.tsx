@@ -1,6 +1,8 @@
 import { set } from "lodash-es"
-import { useEffect, useRef, useState } from "react"
-import { Channels, globalState } from "../services/GlobalState"
+import { autorun } from "mobx"
+import { observer } from "mobx-react-lite"
+import { useContext, useEffect, useReducer, useRef, useState } from "react"
+import { Channels, globalState, HelixCustomFollow } from "../services/GlobalState"
 // import { MenuSolid } from "@graywolfai/react-heroicons" // or
 // import { accessGlobalState } from "./Main"
 
@@ -13,23 +15,20 @@ import { Channels, globalState } from "../services/GlobalState"
 //   showMenu: false,
 // }
 
-const Container = () => {
+const Container = observer(() => {
   // const timeout = useRef(null)
   // const [state, setState] = useState(initialState)
+    // forceUpdate
+  const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
   useEffect(() => {
     async function main() {
       console.log("Container Rendered")
-
-      // if (timeout.current) {
-      //   clearTimeout(timeout.current)
-      //   timeout.current = undefined
-      // }
-
-      // timeout.current = setInterval(() => {
-      //   console.log(accessGlobalState().get())
-      // }, 3000)
     }
+
+    // autorun(() => {
+    //   console.log("inside autorun", globalState.store.follows);
+    // });
 
     main()
   }, [])
@@ -42,10 +41,10 @@ const Container = () => {
         return
       }
 
-      await globalState.client.join(channel)
+      await globalState.client?.join(channel)
 
       let channels: Channels = globalState.store.channels
-      let joinedChannels = globalState.client.getChannels() ? globalState.client.getChannels() : []
+      let joinedChannels = globalState.client?.getChannels() ? globalState.client?.getChannels() : []
 
       if (channels.messages) {
         set(channels, [channel, "messages"], [])
@@ -59,8 +58,6 @@ const Container = () => {
         .sort()
 
       globalState.update({joinedChannels: joinedChannels})
-
-      // forceUpdate()
     } catch (error) {
       console.error(error)
     }
@@ -68,9 +65,9 @@ const Container = () => {
 
   const part = async (channel: string) => {
     try {
-      await globalState.client.part(channel)
+      await globalState.client?.part(channel)
 
-      let joinedChannels = globalState.client.getChannels() ? globalState.client.getChannels() : []
+      let joinedChannels = globalState.client?.getChannels() ? globalState.client?.getChannels() : []
 
       joinedChannels = joinedChannels
         .map((chan: string) => {
@@ -115,6 +112,6 @@ const Container = () => {
       </div>
     </div>
   )
-}
+})
 
 export default Container

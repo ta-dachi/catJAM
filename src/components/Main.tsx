@@ -118,26 +118,16 @@ function urlHash2Obj(hash: string): any {
 }
 
 const Main = observer(() => {
-  // const client = useRef(
-  //   new tmi.client({
-  //     // @ts-ignore
-  //     options: { debug: false, skipMembership: true },
-  //     // channels: [...props.channels],
-  //   })
-  // )
-
-  // const [bigStore, setBigStore] = useState(initialBigStore)
-  // const [smallStore, setSmallStore] = useState(initialSmallStore)
-  // const [authStore, setAuthStore] = useState(initialAuthStore)
-  // const state = useState(globalState)
-
   // forceUpdate
-  const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
-  // const messagesRefHook = useRef(messages)
+  // const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
   const hash = useLocation().hash.substr(1) // substr(1) removes the # from first element
 
   // componentDidMount()
+  useEffect(() => {
+
+  }, )
+
   useEffect(() => {
     async function main() {
       try {
@@ -156,38 +146,42 @@ const Main = observer(() => {
 
           globalState.update({ access_token: access_token, authProvider: authProvider, apiClient: apiClient, userMe: userMe, follows: follows })
 
-          await globalState.client.connect()
+          globalState.initializeTmiClient(userMe.name, access_token)
+          await globalState.client?.connect()
 
           console.log("Connected!")
 
           globalState.update({connected: true})
+
+          globalState.client?.removeAllListeners()
+
+          globalState.client?.addListener("message", (channel: string, tags, message: string) => {
+            channel = channel.replace("#", "").toLowerCase()
+            // const joinedChannels = state.value.joinedChannels
+  
+            if (globalState.store.joinedChannels?.includes(channel)) {
+              message = `[${channel}] {${tags["display-name"]}}: ${message}`
+              console.log(message)
+              if (globalState.store.channels[channel]?.messages) {
+                const length = globalState.store.channels[channel]?.messages.length
+                // globalState.store.channels[channel].messages[length] = message
+                // TODO Optimize this code
+                let currentChannels = {...globalState.store.channels }
+                // Set the message
+                currentChannels[channel].messages[length] = message
+                globalState.update({...currentChannels})
+              } else {
+                const newChannel: Channels = {}
+                set(newChannel, [channel, "messages"], [])
+                // const currentChannels = {...globalState.store.channels }
+                globalState.update({channels: {...globalState.store.channels, ...newChannel}})
+              }
+            }
+          })
+
         }
 
-        globalState.client.removeAllListeners()
 
-        globalState.client.addListener("message", (channel: string, tags, message: string, self) => {
-          channel = channel.replace("#", "").toLowerCase()
-          // const joinedChannels = state.value.joinedChannels
-
-          if (globalState.store.joinedChannels?.includes(channel)) {
-            message = `[${channel}] {${tags["display-name"]}}: ${message}`
-            console.log(message)
-            if (globalState.store.channels[channel]?.messages) {
-              const length = globalState.store.channels[channel]?.messages.length
-              // globalState.store.channels[channel].messages[length] = message
-              // TODO Optimize this code
-              let currentChannels = {...globalState.store.channels }
-              // Set the message
-              currentChannels[channel].messages[length] = message
-              globalState.update({...currentChannels})
-            } else {
-              const newChannel: Channels = {}
-              set(newChannel, [channel, "messages"], [])
-              // const currentChannels = {...globalState.store.channels }
-              globalState.update({channels: {...globalState.store.channels, ...newChannel}})
-            }
-          }
-        })
       } catch (error) {
         console.error(error)
       }
@@ -196,45 +190,18 @@ const Main = observer(() => {
     main()
   }, [])
 
-
-
   return (
     <section>
       {globalState.store.name}
       <div className="mt-4">Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
 
       {(!globalState.store.access_token) ? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a> : ''}
-      
-      {/* <div className="mt-4">
-        {globalState.store.follows?.map((follow, i: number) => {
-          const html = !globalState.store.joinedChannels?.includes(follow.user_login) ? (
-            <div key={i}>
-              {follow.user_name}
-              <span className="ml-4">{follow.viewer_count}</span>
-              <button className="ml-4" onClick={() => join(follow.user_login)}>
-                Join
-              </button>
-            </div>
-          ) : (
-            globalState.store.joinedChannels?.includes(follow.user_login) && (
-              <div key={i}>
-                {follow.user_name}
-                <span className="ml-4">{follow.viewer_count}</span>
-                <button className="ml-4" onClick={() => part(follow.user_login)}>
-                  Leave
-                </button>
-              </div>
-            )
-          )
-          return html
-        })}
-      </div> */}
-
 
       {/* View Multiple */}
       <div>
         {globalState.store.joinedChannels?.map((channel: string) => {
           return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
+          // return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
         })}
       </div>
     </section>

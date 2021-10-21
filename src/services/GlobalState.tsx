@@ -2,6 +2,7 @@ import { ApiClient, HelixPrivilegedUser } from "@twurple/api/lib"
 import { StaticAuthProvider } from "@twurple/auth/lib"
 import { makeObservable, observable, action, autorun, makeAutoObservable } from "mobx"
 import tmi from "tmi.js"
+import { createContext } from "vm"
 
 // Chat
 export type Channels = {
@@ -46,12 +47,7 @@ export type IGlobalState = {
 }
 
 class GlobalState {
-  client = new tmi.client({
-    // @ts-ignore
-    options: { debug: false, skipMembership: true },
-    // channels: [...props.channels],
-  })
-  
+  client: tmi.Client | null = null
   store: IGlobalState = {
     // Chat
     joinedChannels: [],
@@ -80,17 +76,23 @@ class GlobalState {
     console.log('GlobalState created')
   }
 
+  initializeTmiClient(username: string, password: string, channels: string[] = []) {
+    this.client = new tmi.client({
+      // @ts-ignore
+      options: { debug: false, skipMembership: true },
+      identity: {
+        username: username,
+        password: password,
+      },
+      channels: channels
+    })
+
+    this.client.setMaxListeners(1)
+  }
+
   update(newStore: Partial<IGlobalState>) {
     this.store = {...this.store, ...newStore}
   }
 }
 
-
-
 export const globalState = new GlobalState()
-// export const GlobalStateContext = createContext<GlobalState>()
-
-// Debug GlobalState on any changes
-autorun(() => {
-  console.log(globalState)
-})
