@@ -23,7 +23,8 @@
 
 *.swp
 ENV
-.env*
+.env
+.env.develop
 
 npm-debug.log*
 yarn-debug.log*

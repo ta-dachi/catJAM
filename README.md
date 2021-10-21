@@ -23,7 +23,7 @@ To develop, run:
 
 * ionic-react
   * Good support for PWAs, mobile and desktop based apps.
-https://ionicframework.com/docs/components
+  * https://ionicframework.com/docs/components
 * tmi.js
   * Best twitch chat lib available for javascript. Has typescript types too.
   * https://tmijs.com/

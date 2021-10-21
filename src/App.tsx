@@ -42,7 +42,7 @@ const App: React.FC = () => {
       <IonReactRouter>
         <IonRouterOutlet>
           <Switch>
-            <Route exact path="/home">
+            <Route exact path="/chat">
               <Chat />
             </Route>
             <Route exact path="/login">
@@ -52,11 +52,11 @@ const App: React.FC = () => {
               Test
             </Route>
             <Route path="">
-              <Redirect to="/home" />
+              <Redirect to="/chat" />
             </Route>
             <Route path="*">
-              <div>404</div>
-              {/* <Redirect to="/Chat" /> */}
+              {/* <div>404</div> */}
+              <Redirect to="/chat" />
             </Route>
           </Switch>
         </IonRouterOutlet>

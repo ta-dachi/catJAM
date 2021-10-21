@@ -12,7 +12,7 @@ import { observer } from "mobx-react-lite"
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
 const clientSecret: string = process.env.REACT_APP_SECRET as string
-const redirectUri: string = "https://192.168.1.14:3000/home"
+const redirectUri: string = "https://192.168.1.14:3000/chat"
 const scopeUri: string = "chat%3Aread+user_read+user:read:follows+chat:edit"
 const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
 //
@@ -204,7 +204,7 @@ const Main = observer(() => {
 
       {/* MegaChat */}
       <div>
-        <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow>
+        {globalState.store.joinedChannels ?? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow>}
       </div>
 
       {/* View Multiple */}
