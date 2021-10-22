@@ -3,17 +3,26 @@
 A chat client for twitch.
 
 ## Getting Started
+Requires a Twtich Developer account. Create a Developer Application that provides a client_id, client_secret, and a redirect_uri
+
+For AWS Amplify & CI/CD, requires a AWS Account. See the amplify.example.yml and replace the amplify.yml with that.
+
+Example Twitch API envrionmental variables: 
+
+* REACT_APP_CLIENT_ID=39nae8... 
+* REACT_APP_SECRET=fkgit...
+* REACT_REDIRECT_URI=https://192.168.1.14:3000/chat"
+
 To develop, run:
 
 ```
   npm install
   ...
   ...
-  npm run start
+ HTTPS=true npm run start
 ```
 
 ## TODOS
-
 * Hit Enter to send message
 * Auto scroll to the latest message
 * Click button to scroll to the latest message if mid-scroll

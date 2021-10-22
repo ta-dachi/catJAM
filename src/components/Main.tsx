@@ -11,19 +11,23 @@ import { observer } from "mobx-react-lite"
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
-const clientSecret: string = process.env.REACT_APP_SECRET as string
-const redirectUri: string = "https://192.168.1.14:3000/chat"
-const scopeUri: string = "chat%3Aread+user_read+user:read:follows+chat:edit"
-const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
+// const clientSecret: string = process.env.REACT_APP_SECRET as string
+// const redirectUri: string = "https://192.168.1.14:3000/chat"
+const redirectUri: string = process.env.REACT_APP_REDIRECT_URI as string
+// const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
+// const scopeUri: string = "chat%3Aread+user_read+user:read:follows+chat:edit"
+const scopeUri: string = process.env.REACT_APP_SCOPE_URI as string
+console.log(scopeUri)
+console.log(redirectUri)
 //
 const OAUTH_URL: string = "https://id.twitch.tv/oauth2/" // Change this if twitch's API changes
-const OAUTH_REVOKE: string = "revoke"
+// const OAUTH_REVOKE: string = "revoke"
 const OAUTH_AUTHORIZE: string = "authorize"
-const OAUTH_VALIDATE: string = "validate"
+// const OAUTH_VALIDATE: string = "validate"
 //
-const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret)
+// const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret)
 
-function generateNonce(stringLength: any) {
+function generateNonce(stringLength: number) {
   var randomString = "" // Empty value of the selective variable
   const allCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" // listing of all alpha-numeric letters
   while (stringLength--) {
@@ -200,11 +204,11 @@ const Main = observer(() => {
       {globalState.store.name}
       <div className="mt-4">Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
 
-      {!globalState.store.access_token ? <a href={generateAccessTokenURL(generateNonce("Test"))}>Connect to Twitch</a> : ""}
+      {!globalState.store.access_token ? <a href={generateAccessTokenURL(generateNonce(4))}>Connect to Twitch</a> : ""}
 
       {/* MegaChat */}
       <div>
-        {globalState.store.joinedChannels ?? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow>}
+        {globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ''}
       </div>
 
       {/* View Multiple */}
@@ -232,6 +236,7 @@ type MegaChatWindowProps = {
   megaMessages: {channel: string, message:string}[]
 }
 
+/** Has combined channels' chat */
 const MegaChatWindow = (props: MegaChatWindowProps) => {
   return (
     <section>
@@ -251,6 +256,7 @@ const MegaChatWindow = (props: MegaChatWindowProps) => {
   )
 }
 
+/** Holds single channel's chat. */
 const ChatWindow = (props: ChatWindowProps) => {
   // const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
@@ -277,6 +283,7 @@ type ChatInputProps = {
   channel: string
 }
 
+/** Send chat to channel */
 const ChatInput = (props: ChatInputProps) => {
   const [message, setMessage] = useState("")
 
