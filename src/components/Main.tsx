@@ -9,7 +9,7 @@ import { ApiClient, HelixPrivilegedUser } from "@twurple/api"
 import { globalState, HelixCustomFollow, IGlobalState } from "../services/GlobalState"
 import { observer } from "mobx-react-lite"
 /* React Grid Layout */
-import GridLayout from 'react-grid-layout';
+import GridLayout from "react-grid-layout"
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
@@ -100,12 +100,6 @@ type Channels = {
 // export const accessGlobalState = () => wrapState(globalState)
 // export const useGlobalState = () => wrapState(useState(globalState))
 
-const layout = [
-  {i: 'a', x: 0, y: 0, w: 1, h: 2, static: true},
-  {i: 'b', x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4},
-  {i: 'c', x: 4, y: 0, w: 1, h: 2}
-];
-
 /** Gets streams followed by user, pass cursor to after for next */
 const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<{ data: HelixCustomFollow[]; pagination: any }>> => {
   const url = "https://api.twitch.tv/helix/streams/followed"
@@ -172,12 +166,12 @@ const Main = observer(() => {
 
           globalState.client?.addListener("message", (channel: string, tags, message: string) => {
             channel = channel.replace("#", "").toLowerCase()
-            
+
             if (globalState.store.joinedChannels?.includes(channel)) {
               message = `[${channel}] {${tags["display-name"]}}: ${message}`
 
               // Add message to combined channel store
-              globalState.store.megaMessages.push({channel: channel, message: message})
+              globalState.store.megaMessages.push({ channel: channel, message: message })
 
               // Add message to existing channel
               if (globalState.store.channels[channel]?.messages) {
@@ -188,8 +182,8 @@ const Main = observer(() => {
                 // Set the message
                 currentChannels[channel].messages[length] = message
                 globalState.update({ ...currentChannels })
-              
-              // Make a new key/value for channel
+
+                // Make a new key/value for channel
               } else {
                 const newChannel: Channels = {}
                 set(newChannel, [channel, "messages"], [message])
@@ -198,6 +192,9 @@ const Main = observer(() => {
               }
             }
           })
+
+          // Initialize MegaChat
+          globalState.addToLayout(globalState.store.MEGACHAT);
         }
       } catch (error) {
         console.error(error)
@@ -213,21 +210,26 @@ const Main = observer(() => {
       {!globalState.store.access_token ? <a href={generateAccessTokenURL(generateNonce(4))}>Connect to Twitch</a> : ""}
 
       {/* MegaChat */}
-      <div>
-        {globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ''}
-      </div>
+      {/* <div>{globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ""}</div> */}
 
       {/* React Grid Layout */}
       <div>
-        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200}>
-          <div style={{backgroundColor: 'red'}} key="a">a</div>
-          <div style={{backgroundColor: 'blue'}} key="b">b</div>
-          <div style={{backgroundColor: 'yellow'}}key="c">c</div>
+        <GridLayout className="layout" layout={globalState.store.layout} cols={12} rowHeight={30} width={1200}>
+          <div key={globalState.store.MEGACHAT}>{globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ""}</div>
+          {globalState.store.joinedChannels?.map((channel: string) => {
+            return (
+              <section key={channel}>
+                <ChatWindow channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
+                <ChatInput channel={channel}></ChatInput>
+              </section>
+            )
+            // return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
+          })}
         </GridLayout>
       </div>
 
       {/* View Multiple */}
-      <div>
+      {/* <div>
         {globalState.store.joinedChannels?.map((channel: string) => {
           return <section key={channel}>
             <ChatWindow channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
@@ -235,7 +237,7 @@ const Main = observer(() => {
           </section>
           // return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
         })}
-      </div>
+      </div> */}
     </section>
   )
 })
@@ -248,7 +250,7 @@ type ChatWindowProps = {
 }
 
 type MegaChatWindowProps = {
-  megaMessages: {channel: string, message:string}[]
+  megaMessages: { channel: string; message: string }[]
 }
 
 /** Has combined channels' chat */
@@ -303,14 +305,16 @@ const ChatInput = (props: ChatInputProps) => {
 
   const say = async (channel: string, message: string) => {
     await globalState.client?.say(channel, message)
-    setMessage('')
+    setMessage("")
   }
 
   return (
     <section key={props.channel}>
       {props.channel}
       <input type="text" value={message} onChange={(e) => setMessage(e.target.value)}></input>
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => say(props.channel, message)}>Chat</button>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => say(props.channel, message)}>
+        Chat
+      </button>
     </section>
   )
 }

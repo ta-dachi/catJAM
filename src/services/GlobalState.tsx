@@ -1,6 +1,7 @@
 import { ApiClient, HelixPrivilegedUser } from "@twurple/api/lib"
 import { StaticAuthProvider } from "@twurple/auth/lib"
 import { makeObservable, observable, action, autorun, makeAutoObservable } from "mobx"
+import { Layout } from "react-grid-layout"
 import tmi from "tmi.js"
 import { createContext } from "vm"
 
@@ -37,7 +38,12 @@ export type IGlobalState = {
 
   // Combined Mega Chat
   //** Combined messages of all channels joined */
-  megaMessages: {channel: string, message: string}[]
+  /** Megachat key */
+  MEGACHAT: string
+  megaMessages: { channel: string; message: string }[]
+
+  /* React Grid Layout */
+  layout: Layout[]
 
   // Auth
   access_token: string | null
@@ -62,7 +68,11 @@ class GlobalState {
 
     // Combined Mega Chat
     //** Combined messages of all channels joined */
+    MEGACHAT: "MegaChat",
     megaMessages: [],
+
+    /* React Grid Layout */
+    layout: [],
 
     // Auth
     access_token: null,
@@ -81,7 +91,7 @@ class GlobalState {
       store: observable,
       update: action,
     })
-    console.log('GlobalState created')
+    console.log("GlobalState created")
   }
 
   initializeTmiClient(username: string, password: string, channels: string[] = []) {
@@ -92,14 +102,28 @@ class GlobalState {
         username: username,
         password: password,
       },
-      channels: channels
+      channels: channels,
     })
 
     this.client.setMaxListeners(1)
   }
 
   update(newStore: Partial<IGlobalState>) {
-    this.store = {...this.store, ...newStore}
+    this.store = { ...this.store, ...newStore }
+  }
+
+  /* React Grid Layout */
+  createDefaultLayout(key: string): Layout {
+    return { i: key, x: 0, y: 0, w: 4, h: 5 } as Layout
+  }
+
+  addToLayout(key: string) {
+    const newLayout = [...this.store.layout, this.createDefaultLayout(key)]
+    this.update({ layout: newLayout })
+  }
+
+  removeLayout(key: string) {
+    // TODO
   }
 }
 
