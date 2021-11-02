@@ -2,6 +2,10 @@
 
 A chat client for twitch.
 
+## Demo
+
+https://master.d2kgyujnorlgrv.amplifyapp.com/chat
+
 ## Getting Started
 Requires a Twtich Developer account. Create a Developer Application that provides a client_id, client_secret, and a redirect_uri
 
@@ -28,6 +32,9 @@ To develop, run:
 * Click button to scroll to the latest message if mid-scroll
 * Sort channels by joined (Leaves go to the top)
 * Remove chat from MegaChat from channels user has left
+* Update Live followed channels periodically
+  * Handle when stream goes off line but still in channel
+
 ## Resources 
 
 * ionic-react

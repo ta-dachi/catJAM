@@ -6,11 +6,11 @@ frontend:
         - npm install
     build:
       commands:
-        - npm run build
-        - echo "REACT_APP_CLIENT_ID=39nae...." >> .env
-        - echo "REACT_APP_SECRET=fkgitoptm....k" >> .env
-        - echo "REACT_APP_REDIRECT_URI=https://master.d2kgyujnorlgrv.amplifyapp.com/chat >> .env
+        - echo "REACT_APP_CLIENT_ID=39nae8v..." >> .env
+        - echo "REACT_APP_SECRET=fkgitoptmq..." >> .env
+        - echo "REACT_APP_REDIRECT_URI=https://master.d2kgyujnorlgrv.amplifyapp.com/chat" >> .env
         - echo "REACT_APP_SCOPE_URI=chat%3Aread+user_read+user:read:follows+chat:edit" >> .env
+        - npm run build
   artifacts:
     baseDirectory: build
     files:
