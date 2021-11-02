@@ -8,6 +8,8 @@ import { useLocation } from "react-router"
 import { ApiClient, HelixPrivilegedUser } from "@twurple/api"
 import { globalState, HelixCustomFollow, IGlobalState } from "../services/GlobalState"
 import { observer } from "mobx-react-lite"
+/* React Grid Layout */
+import GridLayout from 'react-grid-layout';
 
 //
 const clientId: string = process.env.REACT_APP_CLIENT_ID as string
@@ -97,6 +99,12 @@ type Channels = {
 // // The following 2 functions can be exported now:
 // export const accessGlobalState = () => wrapState(globalState)
 // export const useGlobalState = () => wrapState(useState(globalState))
+
+const layout = [
+  {i: 'a', x: 0, y: 0, w: 1, h: 2, static: true},
+  {i: 'b', x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4},
+  {i: 'c', x: 4, y: 0, w: 1, h: 2}
+];
 
 /** Gets streams followed by user, pass cursor to after for next */
 const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<{ data: HelixCustomFollow[]; pagination: any }>> => {
@@ -202,13 +210,20 @@ const Main = observer(() => {
   return (
     <section>
       {globalState.store.name}
-      <div className="mt-4">Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
-
       {!globalState.store.access_token ? <a href={generateAccessTokenURL(generateNonce(4))}>Connect to Twitch</a> : ""}
 
       {/* MegaChat */}
       <div>
         {globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ''}
+      </div>
+
+      {/* React Grid Layout */}
+      <div>
+        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200}>
+          <div style={{backgroundColor: 'red'}} key="a">a</div>
+          <div style={{backgroundColor: 'blue'}} key="b">b</div>
+          <div style={{backgroundColor: 'yellow'}}key="c">c</div>
+        </GridLayout>
       </div>
 
       {/* View Multiple */}
@@ -240,9 +255,8 @@ type MegaChatWindowProps = {
 const MegaChatWindow = (props: MegaChatWindowProps) => {
   return (
     <section>
-      MegaChat
       <Virtuoso
-        style={{ height: "200px", backgroundColor: "black" }}
+        style={{ height: "200px", backgroundColor: "turquoise", margin: "8px" }}
         totalCount={props.megaMessages?.length ? props.megaMessages?.length : 0}
         itemContent={(index) => {
           return (
