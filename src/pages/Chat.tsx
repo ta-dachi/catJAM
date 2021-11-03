@@ -13,11 +13,11 @@ const Chat: React.FC = () => {
   }, [])
 
   return (
-    <section className="flex w-screen h-screen overflow-y-scroll">
-        <div className="lg:w-60 lg:bg-white">
+    <section className="flex w-screen h-screen">
+        <div className="flex lg:w-80 bg-gray-500 overflow-y-scroll">
           <SideMenu />
         </div>
-        <div className="flex-grow">
+        <div className="flex-grow overflow-y-scroll">
           <Main />
         </div>
     </section>

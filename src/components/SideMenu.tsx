@@ -5,6 +5,7 @@ import { useContext, useEffect, useReducer, useRef, useState } from "react"
 import { Channels, globalState, HelixCustomFollow } from "../services/GlobalState"
 
 const SideMenu = observer(() => {
+  const [, forceRender] = useReducer((x) => (x + 1) % 2, 0)
 
   useEffect(() => {
     async function main() {
@@ -41,11 +42,13 @@ const SideMenu = observer(() => {
           return chan
         })
         .sort()
-
+      console.log(channel)
       globalState.addLayout(channel)
-      globalState.update({ joinedChannels: joinedChannels })
+      setTimeout(() => {
+        globalState.update({ joinedChannels: joinedChannels })
+      }, 200)
 
-      console.log(globalState.store.layout)
+      console.log(globalState.store.layouts)
     } catch (error) {
       console.error(error)
     }
@@ -65,7 +68,9 @@ const SideMenu = observer(() => {
         .sort()
 
       globalState.removeLayout(channel)
-      globalState.update({ joinedChannels: joinedChannels })
+      setTimeout(() => {
+        globalState.update({ joinedChannels: joinedChannels })
+      }, 200)
     } catch (error) {
       console.error(error)
     }
@@ -73,32 +78,30 @@ const SideMenu = observer(() => {
 
   return (
     <div>
-      <div className="flex lg:flex-row lg:w-60 lg:h-screen lg:bg-gray-500">
-        <div className="mt-4">
-          <div>Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
-          {globalState.store.follows?.map((follow, i: number) => {
-            const html = !globalState.store.joinedChannels?.includes(follow.user_login) ? (
+      <div className="mt-4">
+        <div>Connected {globalState.store.connected && globalState.store.access_token ? "Yes" : "No"}</div>
+        {globalState.store.follows?.map((follow, i: number) => {
+          const html = !globalState.store.joinedChannels?.includes(follow.user_login) ? (
+            <div key={i}>
+              {follow.user_name}
+              <span className="ml-4">{follow.viewer_count}</span>
+              <button className="ml-4" onClick={() => join(follow.user_login)}>
+                Join
+              </button>
+            </div>
+          ) : (
+            globalState.store.joinedChannels?.includes(follow.user_login) && (
               <div key={i}>
                 {follow.user_name}
                 <span className="ml-4">{follow.viewer_count}</span>
-                <button className="ml-4" onClick={() => join(follow.user_login)}>
-                  Join
+                <button className="ml-4" key={follow.user_login} onClick={() => part(follow.user_login)}>
+                  Leave
                 </button>
               </div>
-            ) : (
-              globalState.store.joinedChannels?.includes(follow.user_login) && (
-                <div key={i}>
-                  {follow.user_name}
-                  <span className="ml-4">{follow.viewer_count}</span>
-                  <button className="ml-4" key={follow.user_login} onClick={() => part(follow.user_login)}>
-                    Leave
-                  </button>
-                </div>
-              )
             )
-            return html
-          })}
-        </div>
+          )
+          return html
+        })}
       </div>
     </div>
   )

@@ -6,13 +6,14 @@ import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { useLocation } from "react-router"
 import { ApiClient, HelixPrivilegedUser } from "@twurple/api"
-import { globalState, HelixCustomFollow, IGlobalState } from "../services/GlobalState"
+import { BreakpointLayouts, globalState, HelixCustomFollow, IGlobalState } from "../services/GlobalState"
 import { observer } from "mobx-react-lite"
 /* React Grid Layout */
-import GridLayout from "react-grid-layout"
+import GridLayout, { Layout, Responsive, WidthProvider } from "react-grid-layout"
 import { generateAccessTokenURL, generateNonce, getStreamsFollowed } from "../services/TwitchAPI"
 import { clientId } from "../environment/environment"
 import { urlHash2Obj } from "../util/util"
+const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 type Channels = {
   [key: string]: {
@@ -101,6 +102,17 @@ const Main = observer(() => {
     main()
   }, [])
 
+  const onBreakpointChange = (breakpoint: any, cols: any) => {
+    // globalState.update({cols: cols})
+    console.log(breakpoint, cols)
+  }
+
+  const onLayoutChange = (layouts: any) => {
+    // console.log(layouts)
+    // globalState.update({layouts: layouts})
+    console.log(globalState.store.layouts)
+  }
+
   return (
     <section>
       {globalState.store.name}
@@ -111,21 +123,19 @@ const Main = observer(() => {
 
       {/* React Grid Layout */}
       <div>
-        <GridLayout className="layout" layout={globalState.store.layout} cols={12} rowHeight={30} width={1200}>
-          <div key={globalState.store.MEGACHAT}>{globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ""}</div>
-          {/* <div key="a" style={{backgroundColor: 'red'}}></div>
-          <div key="b" style={{backgroundColor: 'red'}}></div>
-          <div key="c" style={{backgroundColor: 'red'}}></div> */}
-          {globalState.store.joinedChannels?.map((channel: string) => {
+        <ResponsiveReactGridLayout className="layout" layouts={globalState.store.layouts} breakpoints={globalState.store.breakpoints} cols={globalState.store.cols} onBreakpointChange={onBreakpointChange} onLayoutChange={onLayoutChange}>
+          {/* <div key={globalState.store.MEGACHAT}>{globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ""}</div> */}
+
+          {globalState.store.joinedChannels?.map((channel: string, i) => {
             return (
-              <section key={channel}>
+              <div key={channel}>
                 <ChatWindow channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
                 {/* <ChatInput channel={channel}></ChatInput> */}
-              </section>
+              </div>
             )
             // return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
           })}
-        </GridLayout>
+        </ResponsiveReactGridLayout>
       </div>
 
       {/* View Multiple */}
@@ -177,7 +187,7 @@ const ChatWindow = (props: ChatWindowProps) => {
   return (
     <Virtuoso
       key={props.channel}
-      style={{ backgroundColor: "darkgrey" }}
+      style={{ height:'100%', width: '100%', backgroundColor: "darkgrey" }}
       totalCount={props.messages?.length ? props.messages?.length : 0}
       itemContent={(index) => {
         return (
@@ -204,7 +214,7 @@ const ChatInput = (props: ChatInputProps) => {
   }
 
   return (
-    <section key={props.channel}>
+    <section style={{height:'100%', width: '100%'}} key={props.channel}>
       <input type="text" value={message} onChange={(e) => setMessage(e.target.value)}></input>
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => say(props.channel, message)}>
         Chat
