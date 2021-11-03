@@ -1,7 +1,7 @@
 import set from "lodash-es/set"
 import { useRef, useEffect, useReducer, createContext, useState } from "react"
 import tmi from "tmi.js"
-import { Virtuoso } from "react-virtuoso"
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso"
 import { ClientCredentialsAuthProvider, StaticAuthProvider } from "@twurple/auth"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { useLocation } from "react-router"
@@ -13,7 +13,8 @@ import GridLayout, { Layout, Responsive, WidthProvider } from "react-grid-layout
 import { generateAccessTokenURL, generateNonce, getStreamsFollowed } from "../services/TwitchAPI"
 import { clientId } from "../environment/environment"
 import { urlHash2Obj } from "../util/util"
-const ResponsiveReactGridLayout = WidthProvider(Responsive);
+import React from "react"
+const ResponsiveReactGridLayout = WidthProvider(Responsive)
 
 type Channels = {
   [key: string]: {
@@ -165,6 +166,7 @@ type MegaChatWindowProps = {
 
 /** Has combined channels' chat */
 const MegaChatWindow = (props: MegaChatWindowProps) => {
+
   return (
     <Virtuoso
       style={{ backgroundColor: "darkgrey" }}
@@ -182,21 +184,40 @@ const MegaChatWindow = (props: MegaChatWindowProps) => {
 
 /** Holds single channel's chat. */
 const ChatWindow = (props: ChatWindowProps) => {
-  // const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
+  const virtuoso = useRef<VirtuosoHandle>(null);
+
+  useEffect(() => {
+
+    if (virtuoso.current) {
+      virtuoso.current.scrollToIndex({
+        index: props.messages.length - 1,
+        align: "end",
+        behavior: "auto"
+      });
+    }
+
+  }, [virtuoso, props])
+
 
   return (
-    <Virtuoso
-      key={props.channel}
-      style={{ height:'100%', width: '100%', backgroundColor: "darkgrey" }}
-      totalCount={props.messages?.length ? props.messages?.length : 0}
-      itemContent={(index) => {
-        return (
-          <div key={index}>
-            {index} {props.messages[index]}
-          </div>
-        )
-      }}
-    />
+    <div style={{ height: "100%" }}>
+      {/* <div style={{ display: 'flex', position: "absolute", width: '100%', top: '90%', zIndex: 9999, backgroundColor: "blue" }}>
+        <div style={{margin: 'auto'}}>scroll to bottom</div>
+      </div> */}
+      <Virtuoso
+        key={props.channel}
+        ref={virtuoso}
+        style={{ backgroundColor: "darkgrey" }}
+        totalCount={props.messages?.length ? props.messages?.length : 0}
+        itemContent={(index) => {
+          return (
+            <div key={index}>
+              {index} {props.messages[index]}
+            </div>
+          )
+        }}
+      />
+    </div>
   )
 }
 
@@ -214,7 +235,7 @@ const ChatInput = (props: ChatInputProps) => {
   }
 
   return (
-    <section style={{height:'100%', width: '100%'}} key={props.channel}>
+    <section style={{ height: "100%", width: "100%" }} key={props.channel}>
       <input type="text" value={message} onChange={(e) => setMessage(e.target.value)}></input>
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => say(props.channel, message)}>
         Chat
