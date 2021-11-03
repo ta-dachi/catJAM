@@ -10,117 +10,14 @@ import { globalState, HelixCustomFollow, IGlobalState } from "../services/Global
 import { observer } from "mobx-react-lite"
 /* React Grid Layout */
 import GridLayout from "react-grid-layout"
-
-//
-const clientId: string = process.env.REACT_APP_CLIENT_ID as string
-// const clientSecret: string = process.env.REACT_APP_SECRET as string
-// const redirectUri: string = "https://192.168.1.14:3000/chat"
-const redirectUri: string = process.env.REACT_APP_REDIRECT_URI as string
-// const scope: string[] = ["chat:read", "user_read", "user:read:follows"]
-// const scopeUri: string = "chat%3Aread+user_read+user:read:follows+chat:edit"
-const scopeUri: string = process.env.REACT_APP_SCOPE_URI as string
-console.log(scopeUri)
-console.log(redirectUri)
-//
-const OAUTH_URL: string = "https://id.twitch.tv/oauth2/" // Change this if twitch's API changes
-// const OAUTH_REVOKE: string = "revoke"
-const OAUTH_AUTHORIZE: string = "authorize"
-// const OAUTH_VALIDATE: string = "validate"
-//
-// const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret)
-
-function generateNonce(stringLength: number) {
-  var randomString = "" // Empty value of the selective variable
-  const allCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" // listing of all alpha-numeric letters
-  while (stringLength--) {
-    randomString += allCharacters.substr(Math.floor(Math.random() * allCharacters.length + 1), 1) // selecting any value from allCharacters varible by using Math.random()
-  }
-  return randomString // returns the generated alpha-numeric string
-}
-
-/**
- * Generate a Twitch login URL to get a access token.
- *
- * @param nonce
- */
-function generateAccessTokenURL(nonce?: string) {
-  return `${OAUTH_URL}${OAUTH_AUTHORIZE}
-?client_id=${clientId}
-&redirect_uri=${redirectUri}
-&response_type=token
-&scope=${scopeUri}
-&nonce=${nonce}`
-}
+import { generateAccessTokenURL, generateNonce, getStreamsFollowed } from "../services/TwitchAPI"
+import { clientId } from "../environment/environment"
+import { urlHash2Obj } from "../util/util"
 
 type Channels = {
   [key: string]: {
     messages: string[]
   }
-}
-
-// type GlobalStore = {
-//   // Chat
-//   joinedChannels: string[] | undefined
-//   channels: Channels
-//   token: {}
-//   name: string
-//   connected: boolean
-
-//   // Auth
-//   access_token: string
-//   authProvider: StaticAuthProvider | null
-//   apiClient: ApiClient | null
-//   userMe: HelixPrivilegedUser | null
-//   follows: HelixCustomFollow[] | null
-// }
-
-// const initialGlobalStore: GlobalStore = {
-//   // Chat
-//   joinedChannels: [],
-//   channels: {},
-//   token: {},
-//   name: "",
-//   connected: false,
-
-//   access_token: "",
-//   authProvider: null,
-//   apiClient: null,
-//   // Auth
-//   userMe: null,
-//   follows: null,
-// }
-
-// const globalState = createState(initialGlobalStore)
-// const wrapState = (s: State<GlobalStore>) => ({
-//   get: () => s,
-//   mergeValue: (newValue: Partial<GlobalStore>) => s.merge(newValue)
-// })
-
-// // The following 2 functions can be exported now:
-// export const accessGlobalState = () => wrapState(globalState)
-// export const useGlobalState = () => wrapState(useState(globalState))
-
-/** Gets streams followed by user, pass cursor to after for next */
-const getStreamsFollowed = async (access_token: string, client_id: string, user_id: string, after: string = ""): Promise<AxiosResponse<{ data: HelixCustomFollow[]; pagination: any }>> => {
-  const url = "https://api.twitch.tv/helix/streams/followed"
-  const config: AxiosRequestConfig = {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-      "Client-id": client_id,
-    },
-    params: {
-      user_id: user_id,
-      after: after,
-    },
-  }
-  return axios.get(url, config)
-}
-
-function urlHash2Obj(hash: string): any {
-  return hash
-    .split("&")
-    .map((v) => v.split("="))
-    .reduce((pre, [key, value]) => ({ ...pre, [key]: value }), {})
 }
 
 const Main = observer(() => {
@@ -194,7 +91,7 @@ const Main = observer(() => {
           })
 
           // Initialize MegaChat
-          globalState.addToLayout(globalState.store.MEGACHAT);
+          globalState.addLayout(globalState.store.MEGACHAT)
         }
       } catch (error) {
         console.error(error)
@@ -216,11 +113,14 @@ const Main = observer(() => {
       <div>
         <GridLayout className="layout" layout={globalState.store.layout} cols={12} rowHeight={30} width={1200}>
           <div key={globalState.store.MEGACHAT}>{globalState.store.follows ? <MegaChatWindow megaMessages={globalState.store.megaMessages}></MegaChatWindow> : ""}</div>
+          {/* <div key="a" style={{backgroundColor: 'red'}}></div>
+          <div key="b" style={{backgroundColor: 'red'}}></div>
+          <div key="c" style={{backgroundColor: 'red'}}></div> */}
           {globalState.store.joinedChannels?.map((channel: string) => {
             return (
               <section key={channel}>
                 <ChatWindow channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
-                <ChatInput channel={channel}></ChatInput>
+                {/* <ChatInput channel={channel}></ChatInput> */}
               </section>
             )
             // return <ChatWindow key={channel} channel={channel} messages={globalState.store.channels[channel]?.messages ? globalState.store.channels[channel]?.messages : []} />
@@ -256,19 +156,17 @@ type MegaChatWindowProps = {
 /** Has combined channels' chat */
 const MegaChatWindow = (props: MegaChatWindowProps) => {
   return (
-    <section>
-      <Virtuoso
-        style={{ height: "200px", backgroundColor: "turquoise", margin: "8px" }}
-        totalCount={props.megaMessages?.length ? props.megaMessages?.length : 0}
-        itemContent={(index) => {
-          return (
-            <div key={index}>
-              {index} {props.megaMessages[index].message}
-            </div>
-          )
-        }}
-      />
-    </section>
+    <Virtuoso
+      style={{ backgroundColor: "darkgrey" }}
+      totalCount={props.megaMessages?.length ? props.megaMessages?.length : 0}
+      itemContent={(index) => {
+        return (
+          <div key={index}>
+            {index} {props.megaMessages[index].message}
+          </div>
+        )
+      }}
+    />
   )
 }
 
@@ -277,21 +175,18 @@ const ChatWindow = (props: ChatWindowProps) => {
   // const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
   return (
-    <section>
-      {props.channel}
-      <Virtuoso
-        key={props.channel}
-        style={{ height: "200px", backgroundColor: "black" }}
-        totalCount={props.messages?.length ? props.messages?.length : 0}
-        itemContent={(index) => {
-          return (
-            <div key={index}>
-              {index} {props.messages[index]}
-            </div>
-          )
-        }}
-      />
-    </section>
+    <Virtuoso
+      key={props.channel}
+      style={{ backgroundColor: "darkgrey" }}
+      totalCount={props.messages?.length ? props.messages?.length : 0}
+      itemContent={(index) => {
+        return (
+          <div key={index}>
+            {index} {props.messages[index]}
+          </div>
+        )
+      }}
+    />
   )
 }
 
@@ -310,7 +205,6 @@ const ChatInput = (props: ChatInputProps) => {
 
   return (
     <section key={props.channel}>
-      {props.channel}
       <input type="text" value={message} onChange={(e) => setMessage(e.target.value)}></input>
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => say(props.channel, message)}>
         Chat

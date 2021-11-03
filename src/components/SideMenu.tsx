@@ -3,23 +3,8 @@ import { autorun } from "mobx"
 import { observer } from "mobx-react-lite"
 import { useContext, useEffect, useReducer, useRef, useState } from "react"
 import { Channels, globalState, HelixCustomFollow } from "../services/GlobalState"
-// import { MenuSolid } from "@graywolfai/react-heroicons" // or
-// import { accessGlobalState } from "./Main"
-
-// type State = {
-//   //
-//   showMenu: boolean
-// }
-
-// const initialState: State = {
-//   showMenu: false,
-// }
 
 const SideMenu = observer(() => {
-  // const timeout = useRef(null)
-  // const [state, setState] = useState(initialState)
-  // forceUpdate
-  const [ignored, forceUpdate] = useReducer((x) => x + 1, 0)
 
   useEffect(() => {
     async function main() {
@@ -57,7 +42,10 @@ const SideMenu = observer(() => {
         })
         .sort()
 
+      globalState.addLayout(channel)
       globalState.update({ joinedChannels: joinedChannels })
+
+      console.log(globalState.store.layout)
     } catch (error) {
       console.error(error)
     }
@@ -76,6 +64,7 @@ const SideMenu = observer(() => {
         })
         .sort()
 
+      globalState.removeLayout(channel)
       globalState.update({ joinedChannels: joinedChannels })
     } catch (error) {
       console.error(error)

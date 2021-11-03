@@ -4,6 +4,8 @@ import { makeObservable, observable, action, autorun, makeAutoObservable } from 
 import { Layout } from "react-grid-layout"
 import tmi from "tmi.js"
 import { createContext } from "vm"
+import { clientId } from "../environment/environment"
+import { getStreamsFollowed } from "./TwitchAPI"
 
 // Chat
 export type Channels = {
@@ -36,6 +38,9 @@ export type IGlobalState = {
   name: string | null
   connected: boolean
 
+  // Twitch
+  getFollowsInterval: NodeJS.Timeout | null
+
   // Combined Mega Chat
   //** Combined messages of all channels joined */
   /** Megachat key */
@@ -66,13 +71,20 @@ class GlobalState {
     name: null,
     connected: false,
 
+    // Twitch
+    getFollowsInterval: null,
+
     // Combined Mega Chat
     //** Combined messages of all channels joined */
     MEGACHAT: "MegaChat",
     megaMessages: [],
 
     /* React Grid Layout */
-    layout: [],
+    layout: [
+      // { i: "a", x: 0, y: 0, w: 4, h: 5 },
+      // { i: "b", x: 0, y: 0, w: 4, h: 5 },
+      // { i: "c", x: 0, y: 0, w: 4, h: 5 },
+    ],
 
     // Auth
     access_token: null,
@@ -91,6 +103,12 @@ class GlobalState {
       store: observable,
       update: action,
     })
+
+    this.store.getFollowsInterval = setInterval(async () => {
+      const follows = (await getStreamsFollowed(this.store.access_token ?? "", clientId ?? "", this.store.userMe?.id ?? "")).data.data
+      this.update({follows: follows})
+    }, 5000)
+
     console.log("GlobalState created")
   }
 
@@ -114,16 +132,18 @@ class GlobalState {
 
   /* React Grid Layout */
   createDefaultLayout(key: string): Layout {
-    return { i: key, x: 0, y: 0, w: 4, h: 5 } as Layout
+    return { i: key, x: 0, y: 0, w: 3, h: 8 } as Layout
   }
 
-  addToLayout(key: string) {
+  addLayout(key: string) {
     const newLayout = [...this.store.layout, this.createDefaultLayout(key)]
     this.update({ layout: newLayout })
   }
 
   removeLayout(key: string) {
     // TODO
+    const newLayout = this.store.layout.filter(layout => layout.i !== key);
+    this.update({ layout: newLayout })
   }
 }
 
